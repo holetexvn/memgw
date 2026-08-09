@@ -1,0 +1,19 @@
+{
+  "_comment": "Merge this hooks block into ~/.claude/settings.json on each machine. Create ~/.memgw/env first (memgw hooks does both automatically).",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          { "type": "command", "command": "node $HOME/.memgw/bootstrap.mjs" }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          { "type": "command", "command": "node $HOME/.memgw/capture.mjs" }
+        ]
+      }
+    ]
+  }
+}

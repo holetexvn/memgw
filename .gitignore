@@ -1,0 +1,19 @@
+node_modules/
+*.log
+.DS_Store
+
+# local runtime state (never commit: contains keys and personal memory)
+.env
+data/*.db
+data/*.db-*
+data/.git/
+data/.metadata/
+data/topics/*
+!data/topics/example.md
+
+# build artefacts
+*.tar.gz
+memgw-installer.run
+
+# python bytecode
+__pycache__/

@@ -1,0 +1,142 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        node: [20, 22]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - run: npm ci
+      - name: Install jq (shell test dependency)
+        run: |
+          if [ "$RUNNER_OS" = "macOS" ]; then brew install jq; else sudo apt-get install -y jq; fi
+      - name: Syntax check
+        run: |
+          for f in src/*.js bin/*.mjs agents/*.mjs agents/parsers/*.mjs hooks/*.mjs; do node --check "$f"; done
+          bash -n test/*.sh deploy/installer-header.sh
+          python3 -m py_compile hermes-plugin/memgw_hermes.py
+      - name: Test suite
+        run: bash test/run-all.sh
+
+  cli:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: CLI works from a clean home
+        env:
+          MEMGW_HOME: /tmp/memgw-ci
+          MEMGW_LLM_MOCK: "1"
+        run: |
+          node bin/memgw.mjs --version
+          node bin/memgw.mjs init
+          node bin/memgw.mjs start &
+          for i in $(seq 20); do curl -sf localhost:8930/health && break; sleep 0.5; done
+          node bin/memgw.mjs doctor
+          node bin/memgw.mjs save "CI smoke fact" --type project
+          node bin/memgw.mjs search "smoke" | grep -q "CI smoke fact"
+          node bin/memgw.mjs status
+      - name: setup wizard smoke (non-interactive, fresh home)
+        env:
+          MEMGW_HOME: /tmp/memgw-setup-ci
+          MEMGW_LLM_MOCK: "1"
+          MEMGW_PORT: "8935"
+          MEMGW_MCP_PORT: "8936"
+        run: |
+          node bin/memgw.mjs setup --yes
+          curl -sf localhost:8935/health
+          kill $(lsof -ti tcp:8935) 2>/dev/null || true
+
+  pack:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: npm pack
+        run: |
+          npm pack --dry-run
+          SIZE=$(npm pack --json --dry-run | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>console.log(JSON.parse(s)[0].unpackedSize))")
+          echo "unpacked size: $SIZE bytes"
+          test "$SIZE" -lt 2000000
+      - name: Install the REAL packed tarball into a clean prefix and run it
+        run: |
+          npm pack
+          PREFIX="$RUNNER_TEMP/memgw-prefix"
+          npm install -g ./memgw-*.tgz --prefix "$PREFIX"
+          export MEMGW_HOME="$RUNNER_TEMP/memgw-packed-home" MEMGW_LLM_MOCK=1 MEMGW_PORT=8937 MEMGW_MCP_PORT=8938
+          "$PREFIX/bin/memgw" --version
+          "$PREFIX/bin/memgw" init
+          "$PREFIX/bin/memgw" start &
+          for i in $(seq 20); do curl -sf localhost:8937/health && break; sleep 0.5; done
+          "$PREFIX/bin/memgw" save "packed smoke" --type project
+          "$PREFIX/bin/memgw" search "packed" | grep -q "packed smoke"
+          kill $(lsof -ti tcp:8937) 2>/dev/null || true
+      - name: Installer builds with the layout the header expects
+        run: |
+          bash scripts/build-installer.sh
+          ARCHIVE_LINE=$(awk '/^__ARCHIVE__$/{print NR+1; exit}' memgw-installer.run)
+          tail -n +"$ARCHIVE_LINE" memgw-installer.run | base64 -d | tar tz | grep -q "^memgw/package.json$"
+
+  cli-windows:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: CLI works on Windows (pure-Node paths)
+        env:
+          MEMGW_LLM_MOCK: "1"
+        run: |
+          export MEMGW_HOME="$RUNNER_TEMP/memgw-ci"
+          node bin/memgw.mjs --version
+          node bin/memgw.mjs init
+          node bin/memgw.mjs start &
+          for i in $(seq 30); do curl -sf localhost:8930/health && break; sleep 0.5; done
+          node bin/memgw.mjs doctor
+          node bin/memgw.mjs save "CI smoke fact on Windows" --type project
+          node bin/memgw.mjs search "smoke" | grep -q "CI smoke fact"
+          echo '{"transcript_path":"NUL","session_id":"t"}' | node hooks/capture.mjs
+          node hooks/bootstrap.mjs | head -2
+      - name: Pure-Node suites on Windows
+        env:
+          MEMGW_LLM_MOCK: "1"
+        run: |
+          node test/parsers-test.mjs
+          node test/embed-test.mjs
+          node test/retention-test.mjs
+      - name: HTTP hardening + MCP on Windows
+        env:
+          MEMGW_LLM_MOCK: "1"
+          MEMGW_KEY: test
+          MEMGW_MCP_SECRET: s3cret
+        run: |
+          export MEMGW_DATA_DIR="$RUNNER_TEMP/memgw-harden/data"
+          node src/server.js &
+          for i in $(seq 30); do curl -sf localhost:8930/health && break; sleep 0.5; done
+          MEMGW_DATA_DIR="$RUNNER_TEMP/memgw-harden/data" node test/hardening-test.mjs
+          node test/mcp-smoke.mjs

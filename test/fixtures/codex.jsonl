@@ -1,0 +1,5 @@
+{"timestamp":"2026-08-08T11:00:00.000Z","type":"session_meta","payload":{"id":"cx-1","cwd":"/home/tung/proj"}}
+{"timestamp":"2026-08-08T11:00:01.000Z","type":"response_item","payload":{"type":"message","role":"user","content":[{"type":"input_text","text":"Chốt dùng Postgres cho dự án X"}]},"session_id":"cx-1"}
+{"timestamp":"2026-08-08T11:00:09.000Z","type":"response_item","payload":{"type":"message","role":"assistant","content":[{"type":"output_text","text":"Đã ghi nhận Postgres cho dự án X."}]},"session_id":"cx-1"}
+{"timestamp":"2026-08-08T11:00:10.000Z","type":"tool_call","payload":{"name":"shell","arguments":"ls"}}
+{"timestamp":"2026-08-08T11:00:11.000Z","type":"token_count","payload":{"input":100,"output":20}}

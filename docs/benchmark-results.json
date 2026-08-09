@@ -1,0 +1,64 @@
+{
+  "comment": "Raw summary numbers behind docs/06-BENCHMARKS.md, for independent comparison. Regenerate with scripts/bench-locomo.mjs and scripts/bench-personamem.mjs; per-question JSONL logs are produced by the --resume flag.",
+  "environment": {
+    "extraction_model": "gpt-5-mini",
+    "answering_model": "gpt-5-mini",
+    "embedding_model": "text-embedding-3-small (dim 512, hybrid runs only)",
+    "judge": "gpt-5-mini (LoCoMo only; PersonaMem is multiple-choice letter match)",
+    "dates": [
+      "2026-08-09",
+      "2026-08-10"
+    ],
+    "dataset_provenance": {
+      "locomo10.json_sha256": "79fa87e90f04081343b8c8debecb80a9a6842b76a7aa537dc9fdf651ea698ff4",
+      "locomo_source": "github.com/snap-research/locomo @ main, data/locomo10.json",
+      "personamem_source": "huggingface.co/datasets/bowen-upenn/PersonaMem, 32k tier"
+    },
+    "per_question_logs": {
+      "locomo_hybrid": "benchmark-logs/locomo-hybrid-perquestion.jsonl.gz (1986 rows: question, gold, prediction, verdict)",
+      "personamem_32k": "benchmark-logs/personamem-32k-perquestion.jsonl.gz (589 rows: letter match)",
+      "locomo_bm25": "benchmark-logs/locomo-bm25-perquestion.jsonl.gz (1986 rows)"
+    }
+  },
+  "locomo10": {
+    "questions": 1986,
+    "bm25": {
+      "overall": 0.586,
+      "single_hop": 0.63,
+      "temporal": 0.564,
+      "multi_hop": 0.17,
+      "open_domain": 0.292,
+      "adversarial_abstention": 0.845,
+      "note": "logged run of 2026-08-10 (per-question log committed); an earlier unlogged run scored 58.0/82.1 -- run-to-run variance with an LLM judge is about +/-3 points per category"
+    },
+    "hybrid": {
+      "overall": 0.664,
+      "single_hop": 0.737,
+      "temporal": 0.667,
+      "multi_hop": 0.326,
+      "open_domain": 0.365,
+      "adversarial_abstention": 0.803
+    },
+    "iterative_ab": {
+      "multi_hop_single_search": 0.181,
+      "multi_hop_one_extra_search": 0.259,
+      "adversarial_single_search": 0.821,
+      "adversarial_one_extra_search": 0.769
+    }
+  },
+  "personamem_32k": {
+    "questions": 589,
+    "personas": 37,
+    "config": "hybrid, one clean store per persona, incremental ingest to each question's cutoff",
+    "overall": 0.596,
+    "by_skill": {
+      "generalizing_to_new_scenarios": 0.772,
+      "recalling_the_reasons_behind_previous_updates": 0.758,
+      "recall_user_shared_facts": 0.729,
+      "provide_preference_aligned_recommendations": 0.691,
+      "track_full_preference_evolution": 0.54,
+      "recalling_facts_mentioned_by_the_user": 0.353,
+      "suggest_new_ideas": 0.204
+    }
+  }
+}

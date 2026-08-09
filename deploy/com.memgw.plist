@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  launchd template: keep the memgw gateway alive on macOS.
+
+  Replace NODE_PATH (output of `which node`), REPO_DIR (the repo checkout) and
+  HOME_PATH (your home directory), then install with:
+
+    cp deploy/com.memgw.plist ~/Library/LaunchAgents/com.memgw.plist
+    launchctl bootstrap gui/$UID ~/Library/LaunchAgents/com.memgw.plist
+
+  Manage it with:
+    launchctl kickstart -k gui/$UID/com.memgw     # restart (e.g. after editing env)
+    launchctl bootout gui/$UID/com.memgw          # stop and disable
+    tail -f ~/.memgw/gateway.log                  # watch the log
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.memgw</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>NODE_PATH</string>
+    <string>REPO_DIR/bin/memgw.mjs</string>
+    <string>start</string>
+  </array>
+  <key>WorkingDirectory</key>
+  <string>REPO_DIR</string>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <true/>
+  <key>ThrottleInterval</key>
+  <integer>10</integer>
+  <key>StandardOutPath</key>
+  <string>HOME_PATH/.memgw/gateway.log</string>
+  <key>StandardErrorPath</key>
+  <string>HOME_PATH/.memgw/gateway.log</string>
+</dict>
+</plist>

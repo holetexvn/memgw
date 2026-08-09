@@ -1,0 +1,74 @@
+{
+  "name": "memgw",
+  "version": "1.0.0",
+  "description": "Shared long-term memory for AI coding agents. One store for Claude Code, Codex, opencode and anything that speaks MCP. Runs locally or on your own server.",
+  "type": "module",
+  "license": "MIT",
+  "bin": {
+    "memgw": "bin/memgw.mjs"
+  },
+  "main": "src/server.js",
+  "exports": {
+    ".": "./src/server.js",
+    "./config": "./src/config.js",
+    "./parsers": "./agents/parsers/index.mjs"
+  },
+  "files": [
+    "bin",
+    "src",
+    "agents",
+    "hooks",
+    "hermes-plugin",
+    "deploy",
+    "docs",
+    "scripts",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md",
+    "test",
+    ".env.example",
+    "README_VI.md",
+    "CONTRIBUTING.md",
+    "SECURITY.md"
+  ],
+  "scripts": {
+    "start": "node bin/memgw.mjs start",
+    "test": "bash test/run-all.sh",
+    "test:parsers": "node test/parsers-test.mjs",
+    "test:retention": "node test/retention-test.mjs",
+    "test:docs": "node test/verify-docs.mjs",
+    "setup": "bash scripts/setup-local.sh",
+    "test:effectiveness": "bash scripts/test-effectiveness.sh"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.14.0",
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "better-sqlite3": "^12.0.0",
+    "hono": "^4.7.0",
+    "zod": "^4.0.0"
+  },
+  "keywords": [
+    "memory",
+    "ai-agent",
+    "mcp",
+    "model-context-protocol",
+    "claude-code",
+    "codex",
+    "opencode",
+    "llm",
+    "rag",
+    "sqlite",
+    "self-hosted"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/holetexvn/memgw.git"
+  },
+  "bugs": {
+    "url": "https://github.com/holetexvn/memgw/issues"
+  },
+  "homepage": "https://github.com/holetexvn/memgw#readme"
+}

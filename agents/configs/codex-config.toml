@@ -1,0 +1,11 @@
+# Codex CLI - add this to ~/.codex/config.toml
+#
+# Faster way (generates this block for you):
+#   codex mcp add memgw --url https://memgw.example.com/mcp
+#
+# The bearer token is read from an environment variable, never hardcoded in the config.
+# Remember to export MEMGW_KEY from your shell profile (~/.zshrc or ~/.bashrc).
+
+[mcp_servers.memgw]
+url = "https://memgw.example.com/mcp"
+bearer_token_env_var = "MEMGW_KEY"

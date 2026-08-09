@@ -1,0 +1,18 @@
+# Watcher running in the background on the machine that hosts the CLI agent
+# (or on the VPS if the agent runs there).
+# Linux: /etc/systemd/system/memgw-watch.service (edit User and the paths)
+[Unit]
+Description=memgw transcript watcher
+After=network-online.target
+
+[Service]
+Type=simple
+User=CHANGE_ME
+Environment=MEMGW_URL=https://memgw.example.com
+Environment=MEMGW_KEY=CHANGE_ME
+ExecStart=/usr/bin/node /opt/memgw/agents/watcher.mjs --agent codex --agent claude-code --interval 60
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

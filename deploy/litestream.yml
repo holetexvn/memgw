@@ -1,0 +1,21 @@
+# Litestream - continuously stream SQLite to Cloudflare R2 (phase 7).
+# Install: the installer sets this up automatically when all 4 R2 variables are in .env.
+# Restore: litestream restore -config /etc/litestream.yml /opt/memgw/data/memgw.db
+#
+# Why Litestream instead of a cron cp: it replays the WAL continuously, so losing the
+# VPS costs a few seconds of data instead of a whole day like an hourly snapshot.
+# It also does NOT lock the database, unlike `sqlite3 .backup` on a database being written to.
+
+dbs:
+  - path: /opt/memgw/data/memgw.db
+    replicas:
+      - type: s3
+        endpoint: ${R2_ENDPOINT}          # https://<account-id>.r2.cloudflarestorage.com
+        bucket: ${R2_BUCKET}
+        path: memgw
+        region: auto
+        access-key-id: ${R2_ACCESS_KEY_ID}
+        secret-access-key: ${R2_SECRET_ACCESS_KEY}
+        # keep 30 days of history, snapshot every 12h
+        retention: 720h
+        snapshot-interval: 12h

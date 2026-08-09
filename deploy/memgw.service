@@ -1,0 +1,21 @@
+[Unit]
+Description=memgw - personal memory gateway
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=memgw
+WorkingDirectory=/opt/memgw
+EnvironmentFile=/opt/memgw/.env
+ExecStart=/usr/bin/node src/server.js
+Restart=always
+RestartSec=3
+# basic hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadWritePaths=/opt/memgw/data
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,11 @@
+# Caddy handles TLS for you. Point the DNS for memgw.example.com at the VPS first.
+memgw.example.com {
+    # MCP endpoint (claude.ai connector + Claude Code)
+    handle /mcp* {
+        reverse_proxy 127.0.0.1:8931
+    }
+    # HTTP API (hooks, Hermes, n8n)
+    handle {
+        reverse_proxy 127.0.0.1:8930
+    }
+}

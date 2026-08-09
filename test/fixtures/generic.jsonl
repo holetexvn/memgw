@@ -1,0 +1,4 @@
+{"role":"user","content":"Fact từ CLI lạ","ts":1786200000000}
+{"role":"assistant","text":"Trả lời từ CLI lạ","ts":1786200001000}
+{"role":"tool","content":"bỏ qua"}
+{ dòng hỏng không phải json }
