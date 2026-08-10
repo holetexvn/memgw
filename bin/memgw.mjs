@@ -237,8 +237,21 @@ async function cmdDoctor() {
   ok("prompt language", cfg.llm.promptLang);
   existsSync(cfg.dataDir) ? ok("data dir", cfg.dataDir) : warn("data dir", `${cfg.dataDir} (created on start)`);
 
+  // Retry once before declaring the gateway dead. When doctor runs inside setup,
+  // the first attempt can fail for reasons that are not "gateway down": a pooled
+  // keep-alive socket the server idle-closed after the earlier health probes, or
+  // a 3s timeout while npm/hook installers still have the machine busy. Both
+  // checks are idempotent reads, so one clean retry is always safe.
+  const fetchRetry = async (url, opts) => {
+    try {
+      return await fetch(url, opts);
+    } catch {
+      await new Promise((r) => setTimeout(r, 500));
+      return fetch(url, opts);
+    }
+  };
   try {
-    const h = await fetch(`http://127.0.0.1:${cfg.port}/health`, { signal: AbortSignal.timeout(3000) });
+    const h = await fetchRetry(`http://127.0.0.1:${cfg.port}/health`, { signal: AbortSignal.timeout(3000) });
     if (!h.ok) {
       bad("gateway", `HTTP ${h.status}`);
     } else {
@@ -267,7 +280,7 @@ async function cmdDoctor() {
         }
       }
     }
-    const s = await fetch(`http://127.0.0.1:${cfg.mcpPort}/mcp`, {
+    const s = await fetchRetry(`http://127.0.0.1:${cfg.mcpPort}/mcp`, {
       method: "POST",
       headers: {
         "content-type": "application/json",

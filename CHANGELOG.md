@@ -4,6 +4,14 @@ All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versioning follows [Semantic Versioning](https://semver.org/).
 
+## [1.0.3] - 2026-08-10
+
+### Fixed
+- `doctor` could report "gateway not running" while the gateway was healthy
+  (stale keep-alive socket or a busy machine timing out the first probe when
+  doctor runs inside `setup`). Both gateway checks now retry once before
+  concluding anything.
+
 ## [1.0.2] - 2026-08-10
 
 ### Fixed
