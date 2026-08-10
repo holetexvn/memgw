@@ -32,6 +32,11 @@ instead; opencode gets a one-line copy command; Codex *capture* is a separate
 `memgw watch --agent codex` process. Prefer doing everything by hand?
 `npx @holetex/memgw start` just starts the gateway and prints the commands.
 
+Prefer delegating? Tell your agent: *"install memgw — follow
+https://github.com/holetexvn/memgw/blob/main/AGENTS.md"*. [AGENTS.md](AGENTS.md) is a
+playbook written for agents: non-interactive setup, what to ask you (the LLM key),
+and how to verify the install.
+
 ---
 
 ## The problem

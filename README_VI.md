@@ -31,6 +31,11 @@ hoặc clone), còn Windows / chạy qua npx-cache sẽ được in đúng dòng
 riêng `memgw watch --agent codex`. Thích tự tay từng bước? `npx @holetex/memgw start` chỉ khởi
 động gateway và in các lệnh ra.
 
+Thích giao việc? Nói với agent của bạn: *"cài memgw — làm theo
+https://github.com/holetexvn/memgw/blob/main/AGENTS.md"*. [AGENTS.md](AGENTS.md) là
+playbook viết riêng cho agent: setup không cần tương tác, cần hỏi bạn thứ gì (key
+LLM), và cách tự kiểm chứng sau khi cài.
+
 ---
 
 ## Vấn đề

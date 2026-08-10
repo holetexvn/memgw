@@ -29,7 +29,9 @@
     ".env.example",
     "README_VI.md",
     "CONTRIBUTING.md",
-    "SECURITY.md"
+    "SECURITY.md",
+    "AGENTS.md",
+    "CLAUDE.md"
   ],
   "scripts": {
     "start": "node bin/memgw.mjs start",
