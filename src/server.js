@@ -274,10 +274,40 @@ export function listTopics(dataDir) {
 }
 
 /** Boot the HTTP API, the MCP server and the background workers. */
-export function start(cfg = loadConfig()) {
+export async function start(cfg = loadConfig()) {
+  // Pre-flight: if a healthy memgw already owns the port, starting again is a
+  // success condition ("it's running"), not a crash worth a stack trace.
+  const occupant = await fetch(`http://127.0.0.1:${cfg.port}/health`, { signal: AbortSignal.timeout(1500) })
+    .then((r) => r.json())
+    .catch(() => null);
+  if (occupant?.ok) {
+    console.log(`memgw is already running on :${cfg.port} -- nothing to start.`);
+    console.log(`(restart it: pkill -f 'memgw.mjs start'; second instance: set MEMGW_PORT)`);
+    process.exit(0);
+  }
+
   const { app, db, queueWorker, queueNotes } = createServer(cfg);
 
   const http = serve({ fetch: app.fetch, port: cfg.port, hostname: cfg.bind });
+  // A taken port must not dump a raw stack trace: the by-far most common cause
+  // is "memgw is already running" (setup started it, user runs start again),
+  // which is a success condition, not a crash.
+  http.on("error", async (err) => {
+    if (err?.code !== "EADDRINUSE") {
+      console.error(err);
+      process.exit(1);
+    }
+    try {
+      const h = await fetch(`http://127.0.0.1:${cfg.port}/health`, { signal: AbortSignal.timeout(2000) }).then((r) => r.json());
+      if (h?.ok) {
+        console.log(`memgw is already running on :${cfg.port} -- nothing to start.`);
+        console.log(`(restart it: pkill -f 'memgw.mjs start'; second instance: set MEMGW_PORT)`);
+        process.exit(0);
+      }
+    } catch {}
+    console.error(`Port ${cfg.port} is taken by another program -- set MEMGW_PORT to a free port.`);
+    process.exit(1);
+  });
   const mcp = startMcpHttp(db, {
     port: cfg.mcpPort,
     bind: cfg.bind,
@@ -330,7 +360,7 @@ export function start(cfg = loadConfig()) {
 // letters and backslashes -- a hand-built `file://${argv[1]}` never matches there.
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const cfg = loadConfig();
-  start(cfg);
+  await start(cfg); // pre-flight may exit "already running" BEFORE the banner
   console.log(`memgw API   http://${cfg.bind}:${cfg.port}`);
   console.log(`memgw MCP   http://${cfg.bind}:${cfg.mcpPort}/mcp`);
   console.log(`data        ${cfg.dataDir}`);

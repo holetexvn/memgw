@@ -131,12 +131,12 @@ async function cmdStart() {
     console.log(
       c.y("No MEMGW_LLM_API_KEY set.") +
         " Capture works and events queue up, but facts are only extracted once you add a key.\n" +
-        c.dim(`  echo 'MEMGW_LLM_API_KEY=sk-...' >> ${ENV_FILE}   (or run with --mock to try it)`)
+        c.dim(`  memgw key   (provider auto-detected; or run with --mock to try it)`)
     );
   }
 
   const { start } = await import("../src/server.js");
-  const srv = start(cfg);
+  const srv = await start(cfg); // exits 0 with a friendly note when memgw already owns the port
   console.log(
     `\n${c.g("memgw running")}  ${c.dim(cfg.isLocalOnly ? "(local only)" : `(bound to ${cfg.bind} -- exposed)`)}`
   );

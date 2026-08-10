@@ -6,6 +6,12 @@ versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [1.0.4] - 2026-08-10
 
+### Fixed
+- `memgw start` while a gateway is already running printed a raw EADDRINUSE
+  stack trace; it now says "memgw is already running -- nothing to start" and
+  exits 0 (pre-flight health check before binding). A port taken by something
+  that is NOT memgw gets a one-line explanation instead of a crash dump.
+
 ### Added
 - `memgw key`: add or replace the LLM key after setup with one command --
   masked prompt, provider auto-detected from the key prefix (OpenAI, Anthropic,

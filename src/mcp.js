@@ -201,6 +201,14 @@ export function startMcpHttp(db, { port, bind = "127.0.0.1", key, pathSecret, da
     });
   });
 
+  httpServer.on("error", (err) => {
+    if (err?.code === "EADDRINUSE") {
+      console.error(`MCP port ${port} is taken -- is another memgw running? (set MEMGW_MCP_PORT for a second instance)`);
+      process.exit(1);
+    }
+    console.error("[mcp]", err);
+    process.exit(1);
+  });
   httpServer.listen(port, bind, () => {});
   return httpServer;
 }
