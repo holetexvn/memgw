@@ -1,19 +1,25 @@
-# memgw
+<div align="center">
+
+# 🧠 memgw
+
+**Trí nhớ dài hạn dùng chung cho các AI coding agent.**
+
+Một kho duy nhất mà Claude Code, Codex CLI, opencode và bất cứ thứ gì nói được MCP
+đều đọc và ghi vào. Agent của bạn thôi quên bạn sau mỗi phiên.
 
 [![CI](https://github.com/holetexvn/memgw/actions/workflows/ci.yml/badge.svg)](https://github.com/holetexvn/memgw/actions/workflows/ci.yml)
 [![node >= 20](https://img.shields.io/badge/node-%3E%3D20-brightgreen)](package.json)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+[![platforms](https://img.shields.io/badge/platforms-macOS%20%7C%20Linux%20%7C%20Windows-8A2BE2)](#cài-đặt)
+[![LoCoMo](https://img.shields.io/badge/LoCoMo-66.4%25-orange)](docs/06-BENCHMARKS.md)
 
 [English](README.md) · Tiếng Việt
-
-**Trí nhớ dài hạn dùng chung cho các AI coding agent.** Một kho duy nhất mà Claude Code,
-Codex CLI, opencode và bất cứ thứ gì nói được MCP đều đọc và ghi vào.
-
-Chạy local bằng một lệnh. Deploy lên server khi muốn nhiều máy dùng chung một bộ nhớ.
 
 ```bash
 npx memgw setup
 ```
+
+</div>
 
 Một lệnh: nó tạo `~/.memgw`, sinh key, hỏi key LLM của bạn, nối Claude Code (hooks +
 MCP) và Codex (MCP) nếu có trên máy, khởi động gateway, và kết thúc bằng một lượt kiểm
@@ -38,7 +44,47 @@ trước bạn đã thử gì mà thất bại.
 
 memgw giữ tất cả ở một chỗ. Agent nào cũng ghi vào đó, agent nào cũng đọc từ đó.
 
-## Cách hoạt động
+## Kiến trúc
+
+```mermaid
+flowchart LR
+    subgraph agents["🤖 Agent của bạn"]
+        CC["Claude Code"]
+        CX["Codex CLI"]
+        OC["opencode"]
+        WEB["claude.ai / web"]
+    end
+
+    subgraph gw["memgw gateway — một process local"]
+        API["HTTP API :8930"]
+        MCP["MCP server :8931"]
+        WK["⚙️ worker chưng cất<br/>(background, 2 lệnh LLM/batch)"]
+        NU["📝 notes updater<br/>(background, agentic)"]
+    end
+
+    subgraph store["💾 Một kho (SQLite + git)"]
+        EV[("events<br/>lượt thô · 90 ngày")]
+        FA[("facts<br/>câu đơn · vĩnh viễn")]
+        NT["notes<br/>Markdown trong git · vĩnh viễn"]
+    end
+
+    CC -- "hooks: capture" --> API
+    CX -- "watcher đọc transcript" --> API
+    OC -- "plugin" --> API
+    WEB -- "tool search / save" --> MCP
+    CC -- "MCP tools" --> MCP
+    CX -- "MCP tools" --> MCP
+    OC -- "MCP tools" --> MCP
+
+    API -- "append (không LLM, tức thì)" --> EV
+    EV --> WK
+    WK -- "chưng cất + dedup" --> FA
+    FA --> NU
+    NU -- "git commit" --> NT
+    MCP -- "hybrid search" --> FA
+    MCP -- "hybrid search" --> EV
+    MCP -- "đọc" --> NT
+```
 
 Ba tầng, tầng sau chưng cất hơn tầng trước:
 
@@ -51,6 +97,36 @@ Ba tầng, tầng sau chưng cất hơn tầng trước:
 Capture cố tình rẻ và "ngu": ghi lượt thô rồi trả về ngay, không bao giờ làm chậm
 agent. Mọi thứ đắt đỏ diễn ra sau, ở background.
 
+## Một phiên với memgw
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant A as Agent (máy nào cũng được)
+    participant G as memgw gateway
+    participant S as Kho
+
+    Note over A,G: mở phiên
+    A->>G: bootstrap
+    G->>S: profile.md + mục lục topic
+    G-->>A: bơm MỘT LẦN → nằm yên trong prompt cache
+
+    Note over A,G: trong lúc làm việc
+    A->>G: memory_search("quyết định postgres")
+    G-->>A: "[decision] chọn Postgres cho billing — đã loại MongoDB"
+    A->>G: memory_save(type=deadend, "đã thử X, fail vì Y")
+
+    Note over A,G: kết thúc phiên
+    A->>G: capture(lượt thô) — tức thì, không LLM
+    G->>S: append events
+
+    Note over G,S: nghỉ 10 phút, chạy background
+    G->>S: chưng cất fact → dedup → cập nhật notes (git commit)
+
+    Note over A,S: phiên sau, agent nào, máy nào cũng vậy
+    A->>G: bootstrap → nó đã biết bạn là ai
+```
+
 Truy xuất theo một nguyên tắc quan trọng: **ngữ cảnh ổn định được bơm một lần lúc mở
 phiên** (profile, mục lục topic) để nằm yên trong prompt cache, còn **fact cụ thể được
 mở ra dưới dạng tool** cho agent tự gọi khi thật sự cần. Bơm kết quả search vào mỗi
@@ -58,6 +134,38 @@ lượt sẽ phá cache và làm ngập ngữ cảnh bằng nhiễu.
 
 Có một loại fact đáng giá hơn hẳn phần còn lại: `deadend` — thứ bạn đã thử, thất bại,
 và lý do. Agent rất thích lặp lại đúng sai lầm cũ; đây là thứ chặn điều đó.
+
+## Sao không dùng… ?
+
+| | Lịch sử chat | RAG trên transcript | **memgw** |
+|---|---|---|---|
+| Sống sót khi đóng terminal | ❌ | ✅ | ✅ |
+| Dùng chung giữa các agent khác nhau | ❌ | ❌ mỗi tool một kho | ✅ một kho |
+| Đã chưng cất (fact, không phải tường chữ) | ❌ | ❌ chunk thô | ✅ câu đơn |
+| Nhớ thứ đã **thất bại** và vì sao | ❌ | ⚠️ chôn vùi | ✅ type `deadend` |
+| Thân thiện với prompt cache | ❌ | ❌ bơm mỗi lượt | ✅ bơm một lần + tool |
+| Người soát được | ❌ | ❌ index mờ mịt | ✅ `git log -p` trên notes |
+| Hạ tầng cần thêm | — | vector DB + pipeline | một file SQLite |
+
+## Tính năng
+
+- 🔌 **Mọi agent nói MCP** — Claude Code, Codex CLI, opencode, claude.ai, Hermes, hay
+  bất kỳ CLI nào qua watcher `generic`. Năm MCP tool, một endpoint.
+- 🏠 **Local-first** — một process, một file SQLite, bind `127.0.0.1`. Muốn nhiều máy
+  chung trí nhớ thì deploy lên VPS bằng một installer.
+- 🔍 **Hybrid search** — FTS5/BM25 luôn chạy (không API, không tốn tiền);
+  `memgw embed on` thêm vector ngay trong cùng file SQLite, fuse bằng RRF, tự rơi về
+  BM25 khi API embeddings chết.
+- 🪦 **Trí nhớ ngõ cụt** — fact `type=deadend` chặn agent thử lại thứ đã fail. Loại
+  fact đáng giá nhất, và cũng là thứ con người hay quên truyền lại nhất.
+- 📓 **Notes có git soát lưng** — mọi thứ model viết ra Markdown đều soi được bằng
+  `git log -p` và hoàn tác bằng một lệnh `git revert`.
+- 🛡️ **Auth không bao giờ là tùy chọn** — server từ chối chạy khi thiếu key, từ chối
+  key yếu khi bind ra ngoài loopback. Không tồn tại cấu hình "kho nhớ mở toang".
+- 💸 **$1–3 / tháng** — chi phí bám theo lượng bạn nói chuyện với agent, không bám theo
+  độ lớn kho; mọi worker chạy theo cursor. Dùng được mọi endpoint tương thích OpenAI.
+- 🌏 **Prompt Anh + Việt** — fact viết ra đúng thứ tiếng bạn làm việc
+  (`MEMGW_PROMPT_LANG=vi`). Thêm ngôn ngữ mới chỉ là copy một block.
 
 ## Cài đặt
 
@@ -228,3 +336,12 @@ không ACL, không hạ tầng ngoài. `docs/01-ARCHITECTURE.md` có mục so s�
 ## Giấy phép
 
 MIT
+
+---
+
+<div align="center">
+
+Nếu memgw giúp bạn khỏi phải giải thích lại dự án thêm một lần nữa, hãy ⭐ repo —
+để agent của người khác cũng tìm được trí nhớ của họ.
+
+</div>

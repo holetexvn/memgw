@@ -1,20 +1,25 @@
-# memgw
+<div align="center">
+
+# 🧠 memgw
+
+**Shared long-term memory for AI coding agents.**
+
+One store that Claude Code, Codex CLI, opencode, and anything that speaks MCP
+can all read from and write to. Your agents stop forgetting you every session.
 
 [![CI](https://github.com/holetexvn/memgw/actions/workflows/ci.yml/badge.svg)](https://github.com/holetexvn/memgw/actions/workflows/ci.yml)
 [![node >= 20](https://img.shields.io/badge/node-%3E%3D20-brightgreen)](package.json)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+[![platforms](https://img.shields.io/badge/platforms-macOS%20%7C%20Linux%20%7C%20Windows-8A2BE2)](#install)
+[![LoCoMo](https://img.shields.io/badge/LoCoMo-66.4%25-orange)](docs/06-BENCHMARKS.md)
 
 English · [Tiếng Việt](README_VI.md)
-
-**Shared long-term memory for AI coding agents.** One store that Claude Code, Codex CLI,
-opencode, and anything that speaks MCP can all read from and write to.
-
-Runs locally with a single command. Deploy it to a server when you want several machines
-to share the same memory.
 
 ```bash
 npx memgw setup
 ```
+
+</div>
 
 One command: it creates `~/.memgw`, generates keys, asks for your LLM key, wires up
 Claude Code (hooks + MCP) and Codex (MCP) when they are on the machine, starts the
@@ -22,10 +27,9 @@ gateway, and ends with a health check. What it does NOT fully automate, it says 
 loud: reboot supervision is installed automatically on macOS (launchd) and Linux
 (systemd --user) from a permanent checkout (`npm i -g memgw` or a clone), while
 Windows / npx-cache runs get the exact Task Scheduler / install command printed
-instead; opencode gets a one-line
-copy command; Codex *capture* is a separate `memgw watch --agent codex` process.
-Prefer doing everything by hand? `npx memgw start` just starts the gateway and prints
-the commands.
+instead; opencode gets a one-line copy command; Codex *capture* is a separate
+`memgw watch --agent codex` process. Prefer doing everything by hand?
+`npx memgw start` just starts the gateway and prints the commands.
 
 ---
 
@@ -41,7 +45,47 @@ last week that did not work.
 
 memgw keeps that in one place. Every agent writes to it, every agent reads from it.
 
-## How it works
+## Architecture
+
+```mermaid
+flowchart LR
+    subgraph agents["🤖 Your agents"]
+        CC["Claude Code"]
+        CX["Codex CLI"]
+        OC["opencode"]
+        WEB["claude.ai / web"]
+    end
+
+    subgraph gw["memgw gateway — one local process"]
+        API["HTTP API :8930"]
+        MCP["MCP server :8931"]
+        WK["⚙️ extraction worker<br/>(background, 2 LLM calls/batch)"]
+        NU["📝 notes updater<br/>(background, agentic)"]
+    end
+
+    subgraph store["💾 One store (SQLite + git)"]
+        EV[("events<br/>raw turns · 90 days")]
+        FA[("facts<br/>one-sentence atoms · forever")]
+        NT["notes<br/>Markdown in git · forever"]
+    end
+
+    CC -- "hooks: capture" --> API
+    CX -- "transcript watcher" --> API
+    OC -- "plugin" --> API
+    WEB -- "search / save tools" --> MCP
+    CC -- "MCP tools" --> MCP
+    CX -- "MCP tools" --> MCP
+    OC -- "MCP tools" --> MCP
+
+    API -- "append (no LLM, instant)" --> EV
+    WK -- "extract + dedup" --> FA
+    EV --> WK
+    FA --> NU
+    NU -- "git commit" --> NT
+    MCP -- "hybrid search" --> FA
+    MCP -- "hybrid search" --> EV
+    MCP -- "read" --> NT
+```
 
 Three layers, each more distilled than the last:
 
@@ -54,6 +98,36 @@ Three layers, each more distilled than the last:
 Capture is cheap and dumb on purpose: it writes raw turns and returns immediately, so it
 never slows an agent down. Everything expensive happens later, in the background.
 
+## A session with memgw
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant A as Agent (any machine)
+    participant G as memgw gateway
+    participant S as Store
+
+    Note over A,G: session start
+    A->>G: bootstrap
+    G->>S: profile.md + topic index
+    G-->>A: injected ONCE → stays in prompt cache
+
+    Note over A,G: while you work
+    A->>G: memory_search("postgres decision")
+    G-->>A: "[decision] chose Postgres for billing — MongoDB ruled out"
+    A->>G: memory_save(type=deadend, "tried X, failed because Y")
+
+    Note over A,G: session end
+    A->>G: capture(raw turns) — instant, no LLM
+    G->>S: append events
+
+    Note over G,S: 10 min idle, in the background
+    G->>S: extract facts → dedup → update notes (git commit)
+
+    Note over A,S: next session, any agent, any machine
+    A->>G: bootstrap → it already knows you
+```
+
 Retrieval follows one rule that matters: **stable context is injected once at session
 start** (profile, topic index) so it stays inside the prompt cache, while **specific
 facts are exposed as tools** for the agent to call when it actually needs them. Injecting
@@ -61,6 +135,38 @@ search results on every turn breaks caching and floods the context with noise.
 
 One fact type earns its keep more than the rest: `deadend`, meaning something you tried
 that failed and why. Agents love repeating the same mistake; this is what stops them.
+
+## Why not just… ?
+
+| | Chat history | RAG over transcripts | **memgw** |
+|---|---|---|---|
+| Survives closing the terminal | ❌ | ✅ | ✅ |
+| Shared across different agents | ❌ | ❌ per-tool | ✅ one store |
+| Distilled (facts, not walls of text) | ❌ | ❌ raw chunks | ✅ one-sentence atoms |
+| Remembers what **failed** and why | ❌ | ⚠️ buried | ✅ `deadend` type |
+| Prompt-cache friendly | ❌ | ❌ injects every turn | ✅ inject once + tools |
+| Human-auditable | ❌ | ❌ opaque index | ✅ `git log -p` on notes |
+| Infrastructure needed | — | vector DB + pipeline | one SQLite file |
+
+## Features
+
+- 🔌 **Every MCP agent** — Claude Code, Codex CLI, opencode, claude.ai, Hermes, or any
+  CLI via the generic transcript watcher. Five MCP tools, one endpoint.
+- 🏠 **Local-first** — one process, one SQLite file, binds `127.0.0.1`. Deploy to a VPS
+  with one installer when you want several machines sharing memory.
+- 🔍 **Hybrid search** — FTS5/BM25 always works (no API, no cost); `memgw embed on` adds
+  semantic vectors in the same SQLite file, RRF-fused, falling back to BM25 if the
+  embeddings API is down.
+- 🪦 **Dead-end memory** — `type=deadend` facts stop agents from retrying what already
+  failed. The most valuable fact type, and the easiest for humans to forget to pass on.
+- 📓 **Git-audited notes** — everything the model writes to Markdown is one
+  `git log -p` away from inspection and one `git revert` away from undo.
+- 🛡️ **Auth is never optional** — the server refuses to start without a key, and refuses
+  weak keys off-loopback. There is no configuration in which memgw is an open store.
+- 💸 **$1–3 / month** — cost tracks how much you talk to agents, not store size; every
+  background worker runs off a cursor. Works with any OpenAI-compatible endpoint.
+- 🌏 **English + Vietnamese prompts** — facts come out in the language you work in
+  (`MEMGW_PROMPT_LANG=vi`). Adding a language is copying one block.
 
 ## Install
 
@@ -239,3 +345,12 @@ the two.
 ## License
 
 MIT
+
+---
+
+<div align="center">
+
+If memgw saves you from re-explaining your project one more time, ⭐ the repo —
+it helps other people's agents find their memory too.
+
+</div>
