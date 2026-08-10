@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // memgw CLI.
 //
-// The whole point of this file is that `npx memgw start` works with zero prior
+// The whole point of this file is that `npx @holetex/memgw start` works with zero prior
 // setup: it creates ~/.memgw, generates keys, starts on loopback, and prints the
 // exact commands to connect your agents. Everything else is the same server that
 // runs on a VPS -- only configuration differs.
@@ -35,7 +35,7 @@ const c = {
 const HELP = `${c.b("memgw")} v${pkg.version} -- shared long-term memory for AI coding agents
 
 ${c.b("Usage")}
-  npx memgw <command> [options]
+  npx @holetex/memgw <command> [options]
 
 ${c.b("Commands")}
   setup              One-command wizard: config, supervision, connect every agent found
@@ -58,11 +58,11 @@ ${c.b("Common options")}
   --mock             Run without an LLM key (pipeline works, extraction is stubbed)
 
 ${c.b("Examples")}
-  npx memgw start                       ${c.dim("# local, zero config")}
-  npx memgw start --bind 0.0.0.0        ${c.dim("# server mode (requires a strong key)")}
-  npx memgw watch --agent codex         ${c.dim("# capture Codex CLI sessions")}
-  npx memgw search "database choice"
-  npx memgw save "chose Postgres for billing" --type decision
+  npx @holetex/memgw start                       ${c.dim("# local, zero config")}
+  npx @holetex/memgw start --bind 0.0.0.0        ${c.dim("# server mode (requires a strong key)")}
+  npx @holetex/memgw watch --agent codex         ${c.dim("# capture Codex CLI sessions")}
+  npx @holetex/memgw search "database choice"
+  npx @holetex/memgw save "chose Postgres for billing" --type decision
 `;
 
 // --------------------------------------------------------------------------
@@ -93,13 +93,13 @@ function connectionInstructions(cfg) {
 ${c.b("Connect your agents")}
 
 ${c.b("Claude Code")}
-  npx memgw hooks                       ${c.dim("# capture + session bootstrap")}
+  npx @holetex/memgw hooks                       ${c.dim("# capture + session bootstrap")}
   claude mcp add --transport http memgw ${mcp} \\
     --header "Authorization: Bearer ${cfg.key}"
 
 ${c.b("Codex CLI")}
   codex mcp add memgw --url ${mcp}/${cfg.mcpSecret}   ${c.dim("# path secret: no header, no env var")}
-  npx memgw watch --agent codex         ${c.dim("# capture (Codex has no hooks)")}
+  npx @holetex/memgw watch --agent codex         ${c.dim("# capture (Codex has no hooks)")}
 
 ${c.b("opencode")}
   cp ${join(ROOT, "agents/opencode-plugin/memgw.js")} ~/.config/opencode/plugins/
@@ -169,7 +169,7 @@ function cmdInit() {
     MEMGW_RETENTION_DAYS: String(cfg.retentionDays),
   });
   console.log(c.g(`Config ready at ${ENV_FILE}`));
-  console.log(c.dim(`Edit it to add MEMGW_LLM_API_KEY, then run: npx memgw start`));
+  console.log(c.dim(`Edit it to add MEMGW_LLM_API_KEY, then run: npx @holetex/memgw start`));
   console.log(connectionInstructions(cfg));
 }
 
@@ -198,7 +198,7 @@ async function cmdStatus() {
     }
   } catch (e) {
     console.error(c.r(`Cannot reach memgw at ${cfg.bind}:${cfg.port} (${e.message})`));
-    console.error(c.dim("Is it running? Try: npx memgw start"));
+    console.error(c.dim("Is it running? Try: npx @holetex/memgw start"));
     process.exit(1);
   }
 }
@@ -214,7 +214,7 @@ async function cmdDoctor() {
   const [maj] = process.versions.node.split(".").map(Number);
   maj >= 20 ? ok("node", process.versions.node) : bad("node", `${process.versions.node} (need >= 20)`);
 
-  existsSync(ENV_FILE) ? ok("config file", ENV_FILE) : warn("config file", `missing (run: npx memgw init)`);
+  existsSync(ENV_FILE) ? ok("config file", ENV_FILE) : warn("config file", `missing (run: npx @holetex/memgw init)`);
   cfg.key ? ok("auth key", `set (${cfg.key.length} chars)`) : bad("auth key", "missing");
   validateConfig(cfg).forEach((p) => bad("config", p));
 
@@ -278,7 +278,7 @@ async function cmdDoctor() {
     });
     s.ok ? ok("mcp", `responding on :${cfg.mcpPort}`) : bad("mcp", `HTTP ${s.status}`);
   } catch {
-    warn("gateway", "not running (start it with: npx memgw start)");
+    warn("gateway", "not running (start it with: npx @holetex/memgw start)");
   }
 
   try {
@@ -477,7 +477,7 @@ async function cmdSetup() {
     console.log(`${c.y("note")}  start at logon with Task Scheduler:`);
     console.log(c.dim(`      schtasks /Create /TN memgw /SC ONLOGON /TR "\\"${process.execPath}\\" \\"${join(ROOT, "bin", "memgw.mjs")}\\" start"`));
   } else if (inNpxCache) {
-    console.log(`${c.y("note")}  running from the npx cache -- install permanently for supervision: npm install -g memgw`);
+    console.log(`${c.y("note")}  running from the npx cache -- install permanently for supervision: npm install -g @holetex/memgw`);
   }
   const probe = async (tries) => {
     for (let i = 0; i < tries; i++) {
@@ -523,7 +523,7 @@ async function cmdSetup() {
     try {
       run("codex", ["mcp", "add", "memgw", "--url", `${mcpUrl}/${cfg.mcpSecret}`]);
       console.log(`${c.g("ok")}    Codex MCP registered (no header, no env var)`);
-      console.log(`${c.dim("      capture for Codex is a separate watcher: npx memgw watch --agent codex")}`);
+      console.log(`${c.dim("      capture for Codex is a separate watcher: npx @holetex/memgw watch --agent codex")}`);
     } catch (e) {
       console.log(`${c.y("note")}  codex mcp add: ${String(e.stderr || e.message).split("\n")[0].slice(0, 90)}`);
     }

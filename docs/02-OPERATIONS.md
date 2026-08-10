@@ -17,7 +17,7 @@ This is the default and the fastest way in. No domain, no VPS, no config file to
 ### Start it
 
 ```bash
-npx memgw start
+npx @holetex/memgw start
 ```
 
 On the first run this creates `~/.memgw`, generates `MEMGW_KEY` and `MEMGW_MCP_SECRET` into
@@ -42,7 +42,7 @@ capture, notes, git commits and retention all run for real.
 ### CLI
 
 ```bash
-npx memgw <command> [options]
+npx @holetex/memgw <command> [options]
 ```
 
 | Command | What it does |
@@ -70,24 +70,24 @@ npx memgw <command> [options]
 Examples:
 
 ```bash
-npx memgw start --bind 0.0.0.0          # server mode, needs a strong key
-npx memgw watch --agent codex           # capture Codex CLI sessions
-npx memgw search "database choice"
-npx memgw save "chose Postgres for billing" --type decision
-npx memgw doctor                        # run this first whenever something looks wrong
+npx @holetex/memgw start --bind 0.0.0.0          # server mode, needs a strong key
+npx @holetex/memgw watch --agent codex           # capture Codex CLI sessions
+npx @holetex/memgw search "database choice"
+npx @holetex/memgw save "chose Postgres for billing" --type decision
+npx @holetex/memgw doctor                        # run this first whenever something looks wrong
 ```
 
 ### Connect your agents
 
 ```bash
 # Claude Code: capture + session bootstrap, then the MCP tools
-npx memgw hooks
+npx @holetex/memgw hooks
 claude mcp add --transport http memgw http://127.0.0.1:8931/mcp \
   --header "Authorization: Bearer <MEMGW_KEY>"
 
 # Codex CLI (no hooks, so use the watcher)
 codex mcp add memgw --url http://127.0.0.1:8931/mcp/<MEMGW_MCP_SECRET>
-npx memgw watch --agent codex
+npx @holetex/memgw watch --agent codex
 ```
 
 `memgw hooks` copies `capture.mjs` and `bootstrap.mjs` into `~/.memgw`, adds `MEMGW_URL` and
@@ -197,7 +197,7 @@ The installer is one option, not the only one. The CLI is the same server, so on
 Node you can run:
 
 ```bash
-MEMGW_BIND=0.0.0.0 MEMGW_KEY=$(openssl rand -hex 24) npx memgw start
+MEMGW_BIND=0.0.0.0 MEMGW_KEY=$(openssl rand -hex 24) npx @holetex/memgw start
 ```
 
 and terminate TLS with whatever reverse proxy you already run. Binding beyond loopback is
@@ -226,7 +226,7 @@ Idempotent: it **keeps `.env` and all of `data/`** and only overwrites the code 
 npm install. Environment variables do not need to be passed again, unless you are turning
 something new on such as Litestream.
 
-In local mode there is nothing to upgrade: `npx memgw@latest start` picks up the new version
+In local mode there is nothing to upgrade: `npx @holetex/memgw@latest start` picks up the new version
 and `~/.memgw` is untouched.
 
 ## 4. Configuration reference
@@ -334,10 +334,10 @@ memgw embed off         # back to pure BM25; stored vectors are kept
 Local mode:
 
 ```bash
-npx memgw status        # event and fact counters, breakdown by source and type
-npx memgw doctor        # config, bind, LLM, data dir, gateway and MCP reachability
-npx memgw search "postgres" --type decision
-npx memgw save "the staging DB resets every Sunday" --type project --topic infra
+npx @holetex/memgw status        # event and fact counters, breakdown by source and type
+npx @holetex/memgw doctor        # config, bind, LLM, data dir, gateway and MCP reachability
+npx @holetex/memgw search "postgres" --type decision
+npx @holetex/memgw save "the staging DB resets every Sunday" --type project --topic infra
 ```
 
 Server mode:
@@ -381,7 +381,7 @@ what it did.
 
 ## 7. Troubleshooting
 
-Start with `npx memgw doctor`. It checks the Node version, the config file, the key, the bind
+Start with `npx @holetex/memgw doctor`. It checks the Node version, the config file, the key, the bind
 address, the LLM settings, the prompt language, the data directory, whether the gateway and
 the MCP server answer, and whether git is available.
 
@@ -586,5 +586,5 @@ In another terminal:
 bash test/run-all.sh     # 11 suites, starts its own server and cleans up after itself
 ```
 
-`node src/server.js` and `npx memgw start` boot the same server. The CLI additionally
+`node src/server.js` and `npx @holetex/memgw start` boot the same server. The CLI additionally
 generates missing keys, creates `~/.memgw`, and prints the connection instructions.

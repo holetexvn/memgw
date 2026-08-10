@@ -4,7 +4,7 @@ Four kinds of client, one mechanism each. Read only the section you need.
 
 Two deployment shapes show up throughout this document:
 
-- **local** (what `npx memgw start` gives you): API `http://127.0.0.1:8930`,
+- **local** (what `npx @holetex/memgw start` gives you): API `http://127.0.0.1:8930`,
   MCP `http://127.0.0.1:8931/mcp`
 - **deployed behind a domain**: API `https://memgw.example.com`,
   MCP `https://memgw.example.com/mcp` (Caddy routes `/mcp*` to port 8931)
@@ -19,7 +19,7 @@ or from the installer output (`sudo cat /opt/memgw/.env`) on a server.
 
 | Client | Write (capture) | Read (recall) | What to install |
 |---|---|---|---|
-| Claude Code | `Stop` hook | `SessionStart` hook + MCP | `npx memgw hooks` |
+| Claude Code | `Stop` hook | `SessionStart` hook + MCP | `npx @holetex/memgw hooks` |
 | claude.ai / Cowork | agent calls `memory_save` | MCP connector | add a connector on the web |
 | Hermes | `sync_turn()` | `prefetch()` | 1 Python file |
 | n8n | HTTP Request node | HTTP Request node | nothing |
@@ -31,10 +31,10 @@ or from the installer output (`sudo cat /opt/memgw/.env`) on a server.
 Two directions: the hooks handle capture and session bootstrap, MCP handles lookups
 mid-session.
 
-### Option 1 - `npx memgw hooks`
+### Option 1 - `npx @holetex/memgw hooks`
 
 ```bash
-npx memgw hooks
+npx @holetex/memgw hooks
 ```
 
 That one command:
@@ -49,7 +49,7 @@ That one command:
 To skip the paste step:
 
 ```bash
-npx memgw hooks --write
+npx @holetex/memgw hooks --write
 ```
 
 `--write` merges the block into `~/.claude/settings.json` in place, but only if that
@@ -58,7 +58,7 @@ other hook type alone. If the file does not exist yet, the command falls back to
 printing the block.
 
 **Pointing at a remote server.** Write `MEMGW_URL` and the server's `MEMGW_KEY` into
-`~/.memgw/env` *before* running `npx memgw hooks`. The command never overwrites an
+`~/.memgw/env` *before* running `npx @holetex/memgw hooks`. The command never overwrites an
 existing value, so it will keep your settings. Run it first and it generates a local
 key instead, which will not match the server.
 
@@ -70,7 +70,7 @@ MEMGW_KEY=<KEY>
 MEMGW_SOURCE=cc-macbook
 EOF
 chmod 600 ~/.memgw/env
-npx memgw hooks
+npx @holetex/memgw hooks
 ```
 
 `MEMGW_SOURCE` must be **different on every machine** (`cc-macbook`, `cc-pc`, ...). It
@@ -144,7 +144,7 @@ Deployed behind a domain, the URL is `https://memgw.example.com/mcp` instead.
 
 ```bash
 # configuration, gateway and MCP reachability in one shot
-npx memgw doctor
+npx @holetex/memgw doctor
 
 # does the capture hook run
 echo '{"transcript_path":"/dev/null","session_id":"test"}' | node ~/.memgw/capture.mjs && echo OK
@@ -191,7 +191,7 @@ https://memgw.example.com/mcp/<SECRET>
 The secret is in the URL because claude.ai cannot send custom headers. That is exactly
 why it is a **separate token** from `MEMGW_KEY`: if it leaks, rotate only that one.
 
-This path needs a public HTTPS URL. A loopback-only install (`npx memgw start` with the
+This path needs a public HTTPS URL. A loopback-only install (`npx @holetex/memgw start` with the
 default bind) is not reachable from claude.ai.
 
 ### How to use it
@@ -349,8 +349,8 @@ git -C ~/.memgw/data log --oneline | head -3
 
 Step 3 returning a fact and step 4 returning a commit means the whole path works.
 
-Steps 1 to 3 have CLI equivalents: `npx memgw save "..."`, `npx memgw search memgw`,
-`npx memgw status`. On a server install the data directory is `/opt/memgw/data` and git
+Steps 1 to 3 have CLI equivalents: `npx @holetex/memgw save "..."`, `npx @holetex/memgw search memgw`,
+`npx @holetex/memgw status`. On a server install the data directory is `/opt/memgw/data` and git
 runs as the service user: `sudo -u memgw git -C /opt/memgw/data log --oneline`.
 
 ---

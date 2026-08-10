@@ -9,7 +9,7 @@ versioning follows [Semantic Versioning](https://semver.org/).
 First public release.
 
 ### Core
-- `npx memgw start`: local-first, zero-config startup. Creates `~/.memgw`, generates
+- `npx @holetex/memgw start`: local-first, zero-config startup. Creates `~/.memgw`, generates
   keys, binds to loopback. The server refuses to start without an auth key, and
   requires a strong key when bound beyond loopback.
 - Three-layer store: raw events (90-day retention), distilled facts (forever),

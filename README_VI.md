@@ -16,7 +16,7 @@ Một kho duy nhất mà Claude Code, Codex CLI, opencode và bất cứ thứ g
 [English](README.md) · Tiếng Việt
 
 ```bash
-npx memgw setup
+npx @holetex/memgw setup
 ```
 
 </div>
@@ -24,10 +24,10 @@ npx memgw setup
 Một lệnh: nó tạo `~/.memgw`, sinh key, hỏi key LLM của bạn, nối Claude Code (hooks +
 MCP) và Codex (MCP) nếu có trên máy, khởi động gateway, và kết thúc bằng một lượt kiểm
 tra sức khỏe. Phần nào chưa tự động được thì nó nói thẳng: supervision qua reboot tự
-cài trên macOS (launchd) và Linux (systemd --user) từ bản cài cố định (`npm i -g memgw`
+cài trên macOS (launchd) và Linux (systemd --user) từ bản cài cố định (`npm i -g @holetex/memgw`
 hoặc clone), còn Windows / chạy qua npx-cache sẽ được in đúng dòng lệnh Task Scheduler
 / lệnh cài để bạn chạy; opencode nhận một dòng lệnh copy; phần *capture* của Codex là một process
-riêng `memgw watch --agent codex`. Thích tự tay từng bước? `npx memgw start` chỉ khởi
+riêng `memgw watch --agent codex`. Thích tự tay từng bước? `npx @holetex/memgw start` chỉ khởi
 động gateway và in các lệnh ra.
 
 ---
@@ -172,7 +172,7 @@ và lý do. Agent rất thích lặp lại đúng sai lầm cũ; đây là thứ
 ### Local
 
 ```bash
-npx memgw start              # không cần config, bind 127.0.0.1
+npx @holetex/memgw start              # không cần config, bind 127.0.0.1
 ```
 
 Thêm key LLM khi muốn chưng cất fact thay vì chỉ capture:
@@ -184,7 +184,7 @@ echo 'MEMGW_LLM_API_KEY=sk-...' >> ~/.memgw/env
 Mọi endpoint tương thích OpenAI đều dùng được: OpenAI, DeepSeek, Groq, OpenRouter, hay
 Ollama / vLLM chạy local. Dùng model rẻ — worker chạy cả ngày.
 
-Chưa có key? `npx memgw start --mock` chạy toàn bộ pipeline mà không cần key.
+Chưa có key? `npx @holetex/memgw start --mock` chạy toàn bộ pipeline mà không cần key.
 
 ### Server
 
@@ -212,12 +212,12 @@ chọn. Xem [docs/02-OPERATIONS.md](docs/02-OPERATIONS.md).
 | **thứ khác** | MCP, nếu nói được | watcher `generic` |
 
 ```bash
-npx memgw hooks                        # Claude Code: capture + bootstrap
+npx @holetex/memgw hooks                        # Claude Code: capture + bootstrap
 claude mcp add --transport http memgw http://127.0.0.1:8931/mcp \
   --header "Authorization: Bearer $MEMGW_KEY"
 
 codex mcp add memgw --url http://127.0.0.1:8931/mcp/<MEMGW_MCP_SECRET>
-npx memgw watch --agent codex          # Codex không có hook, nên watch transcript
+npx @holetex/memgw watch --agent codex          # Codex không có hook, nên watch transcript
 ```
 
 Chi tiết từng client: [docs/03-INTEGRATION.md](docs/03-INTEGRATION.md) và

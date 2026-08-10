@@ -309,7 +309,7 @@ deleted, the newest 200 events are always kept, and `days < 7` is refused withou
 }
 ```
 
-`recent_runs` holds the last 20 worker runs, newest first. `npx memgw status` prints a
+`recent_runs` holds the last 20 worker runs, newest first. `npx @holetex/memgw status` prints a
 condensed version of this response.
 
 ---

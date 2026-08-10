@@ -16,7 +16,7 @@ can all read from and write to. Your agents stop forgetting you every session.
 English · [Tiếng Việt](README_VI.md)
 
 ```bash
-npx memgw setup
+npx @holetex/memgw setup
 ```
 
 </div>
@@ -25,11 +25,11 @@ One command: it creates `~/.memgw`, generates keys, asks for your LLM key, wires
 Claude Code (hooks + MCP) and Codex (MCP) when they are on the machine, starts the
 gateway, and ends with a health check. What it does NOT fully automate, it says out
 loud: reboot supervision is installed automatically on macOS (launchd) and Linux
-(systemd --user) from a permanent checkout (`npm i -g memgw` or a clone), while
+(systemd --user) from a permanent checkout (`npm i -g @holetex/memgw` or a clone), while
 Windows / npx-cache runs get the exact Task Scheduler / install command printed
 instead; opencode gets a one-line copy command; Codex *capture* is a separate
 `memgw watch --agent codex` process. Prefer doing everything by hand?
-`npx memgw start` just starts the gateway and prints the commands.
+`npx @holetex/memgw start` just starts the gateway and prints the commands.
 
 ---
 
@@ -173,7 +173,7 @@ that failed and why. Agents love repeating the same mistake; this is what stops 
 ### Local
 
 ```bash
-npx memgw start              # zero config, binds 127.0.0.1
+npx @holetex/memgw start              # zero config, binds 127.0.0.1
 ```
 
 Add an LLM key when you want facts extracted rather than just captured:
@@ -185,7 +185,7 @@ echo 'MEMGW_LLM_API_KEY=sk-...' >> ~/.memgw/env
 Any OpenAI-compatible endpoint works: OpenAI, DeepSeek, Groq, OpenRouter, or a local
 Ollama or vLLM server. Use a cheap model, the worker runs all day.
 
-No key at all? `npx memgw start --mock` exercises the entire pipeline without one.
+No key at all? `npx @holetex/memgw start --mock` exercises the entire pipeline without one.
 
 ### Server
 
@@ -214,12 +214,12 @@ an optional Litestream backup to S3-compatible storage. See
 | **anything else** | MCP, if it speaks it | `generic` watcher |
 
 ```bash
-npx memgw hooks                        # Claude Code capture + bootstrap
+npx @holetex/memgw hooks                        # Claude Code capture + bootstrap
 claude mcp add --transport http memgw http://127.0.0.1:8931/mcp \
   --header "Authorization: Bearer $MEMGW_KEY"
 
 codex mcp add memgw --url http://127.0.0.1:8931/mcp/<MEMGW_MCP_SECRET>
-npx memgw watch --agent codex          # Codex has no hooks, so watch its transcripts
+npx @holetex/memgw watch --agent codex          # Codex has no hooks, so watch its transcripts
 ```
 
 Full details for every client: [docs/03-INTEGRATION.md](docs/03-INTEGRATION.md) and
@@ -228,7 +228,7 @@ Full details for every client: [docs/03-INTEGRATION.md](docs/03-INTEGRATION.md) 
 Adding an unsupported CLI usually needs no code at all:
 
 ```bash
-npx memgw watch --agent generic --dir ~/.some-cli/sessions --once --dry-run
+npx @holetex/memgw watch --agent generic --dir ~/.some-cli/sessions --once --dry-run
 ```
 
 ## MCP tools

@@ -81,7 +81,7 @@ jobs:
         run: |
           npm pack
           PREFIX="$RUNNER_TEMP/memgw-prefix"
-          npm install -g ./memgw-*.tgz --prefix "$PREFIX"
+          npm install -g ./holetex-memgw-*.tgz --prefix "$PREFIX"
           export MEMGW_HOME="$RUNNER_TEMP/memgw-packed-home" MEMGW_LLM_MOCK=1 MEMGW_PORT=8937 MEMGW_MCP_PORT=8938
           "$PREFIX/bin/memgw" --version
           "$PREFIX/bin/memgw" init

@@ -1,5 +1,5 @@
 {
-  "name": "memgw",
+  "name": "@holetex/memgw",
   "version": "1.0.0",
   "description": "Shared long-term memory for AI coding agents. One store for Claude Code, Codex, opencode and anything that speaks MCP. Runs locally or on your own server.",
   "type": "module",
@@ -70,5 +70,8 @@
   "bugs": {
     "url": "https://github.com/holetexvn/memgw/issues"
   },
-  "homepage": "https://github.com/holetexvn/memgw#readme"
+  "homepage": "https://github.com/holetexvn/memgw#readme",
+  "publishConfig": {
+    "access": "public"
+  }
 }

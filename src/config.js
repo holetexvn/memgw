@@ -131,7 +131,7 @@ export function loadConfig({ autoKey = false } = {}) {
     ensureEnvFile({ MEMGW_KEY: key, MEMGW_MCP_SECRET: mcpSecret });
   }
 
-  // Paths default under $HOME so `npx memgw start` works from any directory.
+  // Paths default under $HOME so `npx @holetex/memgw start` works from any directory.
   // dbPath derives from dataDir, so moving the data directory moves the database
   // with it; MEMGW_DB_PATH is only for putting the database somewhere else entirely.
   const dataDir = get("MEMGW_DATA_DIR", join(HOME_DIR, "data"));

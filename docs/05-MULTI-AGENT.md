@@ -25,7 +25,7 @@ The only thing that differs between agents is **how you get the conversation out
 
 | Agent | Read (recall) | Write (capture) | What to install |
 |---|---|---|---|
-| **Claude Code** | MCP + bootstrap hook | `Stop` hook | `npx memgw hooks` |
+| **Claude Code** | MCP + bootstrap hook | `Stop` hook | `npx @holetex/memgw hooks` |
 | **Codex CLI** | MCP | watcher reads the rollout files | 1 config block + watcher |
 | **opencode** | MCP | `session.idle` plugin | 1 plugin file + config |
 | **Hermes** | `prefetch()` | `sync_turn()` | 1 Python file |
@@ -82,19 +82,19 @@ Codex stores transcripts in `~/.codex/sessions/YYYY/MM/DD/rollout-<id>.jsonl`.
 Check what the parser produces before turning it on:
 
 ```bash
-npx memgw watch --agent codex --once --dry-run
+npx @holetex/memgw watch --agent codex --once --dry-run
 ```
 
 If it looks right, run it in the background:
 
 ```bash
-npx memgw watch --agent codex --interval 60
+npx @holetex/memgw watch --agent codex --interval 60
 ```
 
-`npx memgw watch` is a wrapper around `agents/watcher.mjs` and passes every flag
+`npx @holetex/memgw watch` is a wrapper around `agents/watcher.mjs` and passes every flag
 straight through, so `node agents/watcher.mjs --agent codex --interval 60` is
 equivalent and is what you want when running from a checkout or a service unit. With no
-`--agent` flag, `npx memgw watch` defaults to `--agent claude-code`.
+`--agent` flag, `npx @holetex/memgw watch` defaults to `--agent claude-code`.
 
 The parser skips `tool_call`, `tool_result`, `reasoning`, `token_count`, `event_msg` and
 `state` records, plus anything without a `user` or `assistant` role, keeping only real
@@ -154,7 +154,7 @@ circuit breaker: 5 failures, then 60 seconds off.
 Try the `generic` parser first, it is usually enough:
 
 ```bash
-npx memgw watch --agent generic --dir ~/.some-cli/sessions \
+npx @holetex/memgw watch --agent generic --dir ~/.some-cli/sessions \
   --source my-cli --once --dry-run
 ```
 
@@ -187,7 +187,7 @@ Add a fixture at `test/fixtures/my-cli.jsonl` and a few lines of test in
 One process can follow several agents:
 
 ```bash
-npx memgw watch --agent codex --agent claude-code --interval 60
+npx @holetex/memgw watch --agent codex --agent claude-code --interval 60
 ```
 
 | Flag | Meaning |
@@ -224,7 +224,7 @@ The default is `<agent>-<hostname>`: `codex-macbook`, `claude-code-pc`, `opencod
 ]
 ```
 
-`npx memgw status` prints the same breakdown. Facts distilled from any source land in
+`npx @holetex/memgw status` prints the same breakdown. Facts distilled from any source land in
 the same store, so something said in Codex is still there when you ask again in
 Claude Code.
 
@@ -249,13 +249,13 @@ though you are still using it.
 
 ```bash
 # 1. does it parse correctly
-npx memgw watch --agent codex --once --dry-run
+npx @holetex/memgw watch --agent codex --once --dry-run
 
 # 2. send for real
-npx memgw watch --agent codex --once
+npx @holetex/memgw watch --agent codex --once
 
 # 3. is the new source visible
-npx memgw status
+npx @holetex/memgw status
 curl -s $MEMGW_URL/stats -H "Authorization: Bearer $MEMGW_KEY" | jq '.by_source'
 
 # 4. is MCP working (use the command of the agent in question)

@@ -108,7 +108,7 @@ One process. No Redis, no Mongo, no vector database, no message queue.
 All state lives in a single SQLite file and a directory of Markdown.
 
 The same process is both the local tool and the server. By default it binds `127.0.0.1`
-and keeps everything under `~/.memgw`, so `npx memgw start` needs no configuration at all.
+and keeps everything under `~/.memgw`, so `npx @holetex/memgw start` needs no configuration at all.
 Set `MEMGW_BIND=0.0.0.0` and put it behind TLS when you want to share it across machines.
 Only configuration changes; the code does not.
 
@@ -366,7 +366,7 @@ Choices with a real trade-off, written down so the reasoning is still available 
 
 | Decision | Why | Trade-off |
 |---|---|---|
-| Local-first defaults | `npx memgw start` works with no config: loopback bind, `~/.memgw/data`, generated key | Sharing across machines needs an explicit bind plus TLS |
+| Local-first defaults | `npx @holetex/memgw start` works with no config: loopback bind, `~/.memgw/data`, generated key | Sharing across machines needs an explicit bind plus TLS |
 | Hooks + MCP instead of a MITM proxy | Claude Code has first-party mechanisms; no API key is relayed through another layer | Must be installed per machine, not zero-config |
 | SQLite instead of Postgres | One file, backup is a copy, fast enough at personal scale | No horizontal scaling (not needed) |
 | BM25 default, vectors opt-in | Works with no API key; embeddings add +8.4 LoCoMo points when enabled, stored in the same SQLite file | Semantic matching requires turning it on |
