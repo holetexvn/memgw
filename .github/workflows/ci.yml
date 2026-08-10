@@ -147,4 +147,10 @@ jobs:
           node src/server.js &
           for i in $(seq 30); do curl -sf localhost:8942/health && break; sleep 0.5; done
           MEMGW_DATA_DIR="$RUNNER_TEMP/memgw-harden/data" node test/hardening-test.mjs
+          # seed what mcp-smoke expects (smoke.sh provides this in the Unix jobs)
+          mkdir -p "$MEMGW_DATA_DIR/topics"
+          printf '# Profile\nCI smoke profile\n' > "$MEMGW_DATA_DIR/profile.md"
+          printf '# Billing service\nCI smoke note\n' > "$MEMGW_DATA_DIR/topics/billing-service.md"
+          curl -sf -X POST localhost:8942/capture -H "authorization: Bearer test" -H "content-type: application/json" \
+            -d '{"source":"cc-test","session_id":"mcp-seed","messages":[{"role":"user","content":"we chose SQLite over Postgres for the billing service","ts":1700000000000}]}'
           MCP_URL=http://127.0.0.1:8943 node test/mcp-smoke.mjs
