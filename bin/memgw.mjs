@@ -669,9 +669,53 @@ async function cmdSetup() {
     try {
       run("codex", ["mcp", "add", "memgw", "--url", `${mcpUrl}/${cfg.mcpSecret}`]);
       console.log(`${c.g("ok")}    Codex MCP registered (no header, no env var)`);
-      console.log(`${c.dim("      capture for Codex is a separate watcher: npx @holetex/memgw watch --agent codex")}`);
     } catch (e) {
       console.log(`${c.y("note")}  codex mcp add: ${String(e.stderr || e.message).split("\n")[0].slice(0, 90)}`);
+    }
+    // Capture: Codex has no hooks, so its transcripts need a persistent watcher.
+    // "Connected" must mean BOTH directions -- install it supervised, exactly
+    // like the gateway, wherever a permanent install makes that possible.
+    const watchArgs = [join(ROOT, "bin", "memgw.mjs"), "watch", "--agent", "codex", "--interval", "60"];
+    if (inNpxCache) {
+      console.log(`${c.y("note")}  Codex capture needs a watcher; from the npx cache it cannot be supervised -- run: npx @holetex/memgw watch --agent codex`);
+    } else if (process.platform === "darwin") {
+      const dst = join(homedir(), "Library", "LaunchAgents", "com.memgw.watch-codex.plist");
+      writeFileSync(
+        dst,
+        `<?xml version="1.0" encoding="UTF-8"?>\n<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">\n<plist version="1.0">\n<dict>\n  <key>Label</key><string>com.memgw.watch-codex</string>\n  <key>ProgramArguments</key>\n  <array>\n${[process.execPath, ...watchArgs].map((a) => `    <string>${a}</string>`).join("\n")}\n  </array>\n  <key>RunAtLoad</key><true/>\n  <key>KeepAlive</key><true/>\n  <key>StandardOutPath</key><string>/tmp/memgw-watch-codex.log</string>\n  <key>StandardErrorPath</key><string>/tmp/memgw-watch-codex.log</string>\n</dict>\n</plist>\n`
+      );
+      const wuid = process.getuid();
+      try {
+        run("launchctl", ["bootout", `gui/${wuid}/com.memgw.watch-codex`]);
+        await new Promise((r) => setTimeout(r, 1500));
+      } catch {}
+      let loaded = false;
+      for (let i = 0; i < 3 && !loaded; i++) {
+        try {
+          run("launchctl", ["bootstrap", `gui/${wuid}`, dst]);
+          loaded = true;
+        } catch { await new Promise((r) => setTimeout(r, 2000)); }
+      }
+      loaded
+        ? console.log(`${c.g("ok")}    Codex capture: watcher supervised by launchd (com.memgw.watch-codex)`)
+        : console.log(`${c.y("warn")}  watcher plist written but launchctl failed -- run: launchctl bootstrap gui/${wuid} ${dst}`);
+    } else if (process.platform === "linux") {
+      try {
+        const unitDir = join(homedir(), ".config", "systemd", "user");
+        mkdirSync(unitDir, { recursive: true });
+        writeFileSync(
+          join(unitDir, "memgw-watch-codex.service"),
+          `[Unit]\nDescription=memgw Codex transcript watcher\n\n[Service]\nExecStart=${process.execPath} ${watchArgs.join(" ")}\nRestart=always\nRestartSec=10\n\n[Install]\nWantedBy=default.target\n`
+        );
+        run("systemctl", ["--user", "daemon-reload"]);
+        run("systemctl", ["--user", "enable", "--now", "memgw-watch-codex"]);
+        console.log(`${c.g("ok")}    Codex capture: watcher supervised by systemd --user (memgw-watch-codex)`);
+      } catch {
+        console.log(`${c.y("note")}  could not enable the Codex watcher; run by hand: systemctl --user enable --now memgw-watch-codex`);
+      }
+    } else if (process.platform === "win32") {
+      console.log(`${c.y("note")}  Codex capture at logon with Task Scheduler:`);
+      console.log(c.dim(`      schtasks /Create /TN memgw-watch-codex /SC ONLOGON /TR "\\"${process.execPath}\\" ${watchArgs.map((a) => `\\"${a}\\"`).join(" ")}"`));
     }
   }
   if (found("opencode")) {

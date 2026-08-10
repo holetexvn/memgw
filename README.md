@@ -28,8 +28,9 @@ gateway, and ends with a health check. What it does NOT fully automate, it says 
 loud: reboot supervision is installed automatically on macOS (launchd) and Linux
 (systemd --user) from a permanent checkout (`npm i -g @holetex/memgw` or a clone), while
 Windows / npx-cache runs get the exact Task Scheduler / install command printed
-instead; opencode gets a one-line copy command; Codex *capture* is a separate
-`memgw watch --agent codex` process.
+instead; opencode gets a one-line copy command. When Codex CLI is found, its
+transcript watcher (Codex has no hooks) is installed supervised too on
+macOS/Linux — elsewhere the exact `memgw watch --agent codex` command is printed.
 
 Just want to try it without installing anything? `npx @holetex/memgw setup` works
 too — same wizard, but running from the npx cache means no reboot supervision

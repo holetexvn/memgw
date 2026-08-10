@@ -27,9 +27,10 @@ MCP) và Codex (MCP) nếu có trên máy, khởi động gateway, và kết th�
 tra sức khỏe. Phần nào chưa tự động được thì nó nói thẳng: supervision qua reboot tự
 cài trên macOS (launchd) và Linux (systemd --user) từ bản cài cố định (`npm i -g @holetex/memgw`
 hoặc clone), còn Windows / chạy qua npx-cache sẽ được in đúng dòng lệnh Task Scheduler
-/ lệnh cài để bạn chạy; opencode nhận một dòng lệnh copy; phần *capture* của Codex là một process
-riêng `memgw watch --agent codex`. Thích tự tay từng bước? `npx @holetex/memgw start` chỉ khởi
-động gateway và in các lệnh ra.
+/ lệnh cài để bạn chạy; opencode nhận một dòng lệnh copy. Thấy Codex CLI thì watcher
+capture của nó (Codex không có hook) cũng được cài supervised luôn trên macOS/Linux —
+nơi khác sẽ in đúng lệnh `memgw watch --agent codex` để bạn chạy. Thích tự tay từng
+bước? `npx @holetex/memgw start` chỉ khởi động gateway và in các lệnh ra.
 
 Thích giao việc? Nói với agent của bạn: *"cài memgw — làm theo
 https://github.com/holetexvn/memgw/blob/main/AGENTS.md"*. [AGENTS.md](AGENTS.md) là

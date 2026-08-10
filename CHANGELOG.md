@@ -13,6 +13,11 @@ versioning follows [Semantic Versioning](https://semver.org/).
   that is NOT memgw gets a one-line explanation instead of a crash dump.
 
 ### Added
+- `setup` now installs the Codex transcript watcher as a supervised process
+  (launchd `com.memgw.watch-codex` on macOS, systemd --user
+  `memgw-watch-codex` on Linux) whenever Codex CLI is found and memgw runs
+  from a permanent install -- Codex capture no longer needs a manual step.
+  Windows / npx-cache runs still get the exact command printed.
 - `memgw key`: add or replace the LLM key after setup with one command --
   masked prompt, provider auto-detected from the key prefix (OpenAI, Anthropic,
   Groq, OpenRouter -> endpoint and default model configured automatically), and

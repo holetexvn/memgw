@@ -36,9 +36,12 @@ Rules for you:
    curl -sf http://127.0.0.1:8930/health     # {"ok":true,...}
    npx @holetex/memgw doctor                 # every line should be ok (llm warns until a key is set)
    ```
-3. **Codex capture is a separate process.** Codex has no hooks; if the user uses
-   Codex CLI, start `npx @holetex/memgw watch --agent codex --interval 60` and keep it
-   supervised (see `agents/configs/` for ready-made launchd/systemd units).
+3. **Codex capture is a watcher process.** Codex has no hooks. From a permanent
+   install on macOS/Linux, `setup` installs the watcher supervised automatically
+   (launchd `com.memgw.watch-codex` / systemd `memgw-watch-codex`); on Windows or
+   from the npx cache it prints the command — relay it to the user. Verify capture
+   is really flowing with `memgw status` ("agents seen" must list a codex source
+   after a Codex session).
 4. **Do not edit files under `~/.memgw/data/` by hand** — that is the memory store.
    Use the CLI (`memgw save`, `memgw forget`) or the MCP tools.
 5. Per-client connection commands (opencode, claude.ai, Hermes, generic CLIs) are in

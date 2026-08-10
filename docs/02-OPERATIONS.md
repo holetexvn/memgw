@@ -550,15 +550,18 @@ Local mode — the supervision job must go FIRST, or it will resurrect the gatew
 and recreate `~/.memgw` behind you:
 
 ```bash
-# macOS: remove the launchd job installed by `memgw setup`
+# macOS: remove the launchd jobs installed by `memgw setup` (gateway + Codex watcher)
 launchctl bootout gui/$UID/com.memgw 2>/dev/null
-rm -f ~/Library/LaunchAgents/com.memgw.plist
+launchctl bootout gui/$UID/com.memgw.watch-codex 2>/dev/null
+rm -f ~/Library/LaunchAgents/com.memgw.plist ~/Library/LaunchAgents/com.memgw.watch-codex.plist
 
-# Windows: remove the Task Scheduler entry if you created one
+# Windows: remove the Task Scheduler entries if you created them
 #   schtasks /Delete /TN memgw /F
+#   schtasks /Delete /TN memgw-watch-codex /F
 
-# Linux: remove the systemd --user unit installed by `memgw setup`
-#   systemctl --user disable --now memgw; rm -f ~/.config/systemd/user/memgw.service
+# Linux: remove the systemd --user units installed by `memgw setup`
+#   systemctl --user disable --now memgw memgw-watch-codex
+#   rm -f ~/.config/systemd/user/memgw.service ~/.config/systemd/user/memgw-watch-codex.service
 
 # then stop anything left and delete the store
 kill $(lsof -ti tcp:8930) 2>/dev/null
