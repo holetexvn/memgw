@@ -212,7 +212,9 @@ async function cmdDoctor() {
   const bad = (n, v) => rows.push([c.r("fail"), n, v]);
 
   const [maj] = process.versions.node.split(".").map(Number);
-  maj >= 20 ? ok("node", process.versions.node) : bad("node", `${process.versions.node} (need >= 20)`);
+  if (maj < 20) bad("node", `${process.versions.node} (need >= 20)`);
+  else if (maj % 2 === 1) warn("node", `${process.versions.node} -- odd (non-LTS) versions have no better-sqlite3 prebuilds; use 20/22/24 LTS`);
+  else ok("node", process.versions.node);
 
   existsSync(ENV_FILE) ? ok("config file", ENV_FILE) : warn("config file", `missing (run: npx @holetex/memgw init)`);
   cfg.key ? ok("auth key", `set (${cfg.key.length} chars)`) : bad("auth key", "missing");
@@ -399,10 +401,16 @@ async function cmdSetup() {
     if (!rl) rl = (await import("node:readline/promises")).createInterface({ input: process.stdin, output: process.stdout });
     return (await rl.question(q)).trim();
   };
-  // secrets must not land in terminal scrollback: mask every typed character
+  // secrets must not land in terminal scrollback: mask every typed character.
+  // _writeToOutput is an undocumented readline internal that is missing on some
+  // Node versions (v21 crashed here) -- fall back to visible input rather than die.
   const askSecret = async (q) => {
     if (!tty) return "";
     if (!rl) rl = (await import("node:readline/promises")).createInterface({ input: process.stdin, output: process.stdout });
+    if (typeof rl._writeToOutput !== "function") {
+      console.log(c.dim("  (this Node version cannot mask input -- the key will be visible as you type)"));
+      return (await rl.question(q)).trim();
+    }
     const orig = rl._writeToOutput.bind(rl);
     rl._writeToOutput = (s) => orig(/[\r\n]/.test(s) || s.includes(q) ? s : "*");
     try {
@@ -413,6 +421,10 @@ async function cmdSetup() {
   };
 
   console.log(c.b("memgw setup — one-time wizard for this machine\n"));
+
+  const nodeMajor = +process.versions.node.split(".")[0];
+  if (nodeMajor % 2 === 1)
+    console.log(`${c.y("warn")}  Node ${process.versions.node} is an odd (non-LTS) release -- better-sqlite3 ships no prebuilds for it. If anything fails below, install Node 20/22/24 LTS and rerun.`);
 
   // 1. config and keys (created on first load) -- Node is the only prerequisite,
   // and running this command proves it is present.

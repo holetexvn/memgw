@@ -4,6 +4,19 @@ All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versioning follows [Semantic Versioning](https://semver.org/).
 
+## [1.0.1] - 2026-08-10
+
+### Fixed
+- `memgw setup` crashed on Node versions where readline's internal
+  `_writeToOutput` is missing (seen on v21.7): masked key input now falls back
+  to visible input instead of dying.
+- `setup` and `doctor` now warn on odd (non-LTS) Node versions, which have no
+  better-sqlite3 prebuilds.
+
+### Added
+- `AGENTS.md`: an agent playbook for installing memgw on a user's machine and
+  for working on the codebase (shipped in the npm package).
+
 ## [1.0.0] - 2026-08-10
 
 First public release.
