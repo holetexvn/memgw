@@ -281,6 +281,15 @@ async function cmdDoctor() {
     s.ok ? ok("mcp", `responding on :${cfg.mcpPort}`) : bad("mcp", `HTTP ${s.status}`);
   } catch {
     warn("gateway", "not running (start it with: npx @holetex/memgw start)");
+    // a setup-started gateway logs here; its last words are the diagnosis
+    const glog = join(HOME_DIR, "gateway.log");
+    if (existsSync(glog)) {
+      const tail = readFileSync(glog, "utf8").trim().split("\n").slice(-4);
+      if (tail.length) {
+        console.log(c.dim(`        last lines of ${glog}:`));
+        tail.forEach((l) => console.log(c.dim(`        ${l.slice(0, 200)}`)));
+      }
+    }
   }
 
   try {
@@ -504,12 +513,17 @@ async function cmdSetup() {
   if (!up) {
     // Supervision either is not installed on this platform or has not kicked in.
     // setup must still END with a working gateway, so start one directly.
+    // Its output goes to a log file: a detached gateway that dies silently is
+    // undebuggable, and "it was up during setup, down at doctor" does happen.
     const { spawn } = await import("node:child_process");
+    const { openSync } = await import("node:fs");
+    const logFile = join(HOME_DIR, "gateway.log");
+    const logFd = openSync(logFile, "a");
     spawn(process.execPath, [join(ROOT, "bin", "memgw.mjs"), "start"], {
       detached: true,
-      stdio: "ignore",
+      stdio: ["ignore", logFd, logFd],
     }).unref();
-    console.log(`${c.y("note")}  starting the gateway directly (runs until reboot; supervision makes it permanent)`);
+    console.log(`${c.y("note")}  starting the gateway directly (runs until reboot; log: ${logFile})`);
     up = await probe(16);
   }
   up

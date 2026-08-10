@@ -1,6 +1,6 @@
 {
   "name": "@holetex/memgw",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Shared long-term memory for AI coding agents. One store for Claude Code, Codex, opencode and anything that speaks MCP. Runs locally or on your own server.",
   "type": "module",
   "license": "MIT",

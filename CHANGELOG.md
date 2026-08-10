@@ -4,6 +4,14 @@ All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versioning follows [Semantic Versioning](https://semver.org/).
 
+## [1.0.2] - 2026-08-10
+
+### Fixed
+- The gateway that `setup` starts directly (when supervision is unavailable) now
+  logs to `~/.memgw/gateway.log` instead of discarding output, and `doctor`
+  prints the log tail when the gateway is down -- a silently dying gateway was
+  undebuggable.
+
 ## [1.0.1] - 2026-08-10
 
 ### Fixed
