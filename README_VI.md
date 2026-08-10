@@ -12,6 +12,7 @@ Một kho duy nhất mà Claude Code, Codex CLI, opencode và bất cứ thứ g
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 [![platforms](https://img.shields.io/badge/platforms-macOS%20%7C%20Linux%20%7C%20Windows-8A2BE2)](#cài-đặt)
 [![LoCoMo](https://img.shields.io/badge/LoCoMo-66.4%25-orange)](docs/06-BENCHMARKS.md)
+[![PersonaMem](https://img.shields.io/badge/PersonaMem--32k-59.6%25-orange)](docs/06-BENCHMARKS.md)
 
 [English](README.md) · Tiếng Việt
 
@@ -46,45 +47,10 @@ memgw giữ tất cả ở một chỗ. Agent nào cũng ghi vào đó, agent n�
 
 ## Kiến trúc
 
-```mermaid
-flowchart LR
-    subgraph agents["🤖 Agent của bạn"]
-        CC["Claude Code"]
-        CX["Codex CLI"]
-        OC["opencode"]
-        WEB["claude.ai / web"]
-    end
-
-    subgraph gw["memgw gateway — một process local"]
-        API["HTTP API :8930"]
-        MCP["MCP server :8931"]
-        WK["⚙️ worker chưng cất<br/>(background, 2 lệnh LLM/batch)"]
-        NU["📝 notes updater<br/>(background, agentic)"]
-    end
-
-    subgraph store["💾 Một kho (SQLite + git)"]
-        EV[("events<br/>lượt thô · 90 ngày")]
-        FA[("facts<br/>câu đơn · vĩnh viễn")]
-        NT["notes<br/>Markdown trong git · vĩnh viễn"]
-    end
-
-    CC -- "hooks: capture" --> API
-    CX -- "watcher đọc transcript" --> API
-    OC -- "plugin" --> API
-    WEB -- "tool search / save" --> MCP
-    CC -- "MCP tools" --> MCP
-    CX -- "MCP tools" --> MCP
-    OC -- "MCP tools" --> MCP
-
-    API -- "append (không LLM, tức thì)" --> EV
-    EV --> WK
-    WK -- "chưng cất + dedup" --> FA
-    FA --> NU
-    NU -- "git commit" --> NT
-    MCP -- "hybrid search" --> FA
-    MCP -- "hybrid search" --> EV
-    MCP -- "đọc" --> NT
-```
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/architecture-vi-dark.svg">
+  <img alt="kiến trúc memgw: agent, gateway, kho" src="docs/assets/architecture-vi-light.svg">
+</picture>
 
 Ba tầng, tầng sau chưng cất hơn tầng trước:
 
@@ -99,33 +65,10 @@ agent. Mọi thứ đắt đỏ diễn ra sau, ở background.
 
 ## Một phiên với memgw
 
-```mermaid
-sequenceDiagram
-    autonumber
-    participant A as Agent (máy nào cũng được)
-    participant G as memgw gateway
-    participant S as Kho
-
-    Note over A,G: mở phiên
-    A->>G: bootstrap
-    G->>S: profile.md + mục lục topic
-    G-->>A: bơm MỘT LẦN → nằm yên trong prompt cache
-
-    Note over A,G: trong lúc làm việc
-    A->>G: memory_search("quyết định postgres")
-    G-->>A: "[decision] chọn Postgres cho billing — đã loại MongoDB"
-    A->>G: memory_save(type=deadend, "đã thử X, fail vì Y")
-
-    Note over A,G: kết thúc phiên
-    A->>G: capture(lượt thô) — tức thì, không LLM
-    G->>S: append events
-
-    Note over G,S: nghỉ 10 phút, chạy background
-    G->>S: chưng cất fact → dedup → cập nhật notes (git commit)
-
-    Note over A,S: phiên sau, agent nào, máy nào cũng vậy
-    A->>G: bootstrap → nó đã biết bạn là ai
-```
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/session-vi-dark.svg">
+  <img alt="một phiên với memgw" src="docs/assets/session-vi-light.svg">
+</picture>
 
 Truy xuất theo một nguyên tắc quan trọng: **ngữ cảnh ổn định được bơm một lần lúc mở
 phiên** (profile, mục lục topic) để nằm yên trong prompt cache, còn **fact cụ thể được
@@ -280,6 +223,10 @@ qua pipeline thật capture → chưng cất → dedup → search, chấm bằng
 |---|---|---|
 | BM25 (mặc định) | 58.6% | 84.5% |
 | + embeddings (`memgw embed on`) | **66.4%** | 80.3% |
+
+Trên [PersonaMem](https://github.com/bowen-upenn/PersonaMem) (COLM 2025, tier 32k
+token, 589 câu trắc nghiệm về cá nhân hóa người dùng): **59.6%** so với baseline ngẫu
+nhiên 25%, đo end-to-end qua đúng pipeline đó.
 
 Phương pháp, điểm theo từng loại câu hỏi, và cách tự chạy lại với ~$4:
 [docs/06-BENCHMARKS.md](docs/06-BENCHMARKS.md).

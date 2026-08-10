@@ -12,6 +12,7 @@ can all read from and write to. Your agents stop forgetting you every session.
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 [![platforms](https://img.shields.io/badge/platforms-macOS%20%7C%20Linux%20%7C%20Windows-8A2BE2)](#install)
 [![LoCoMo](https://img.shields.io/badge/LoCoMo-66.4%25-orange)](docs/06-BENCHMARKS.md)
+[![PersonaMem](https://img.shields.io/badge/PersonaMem--32k-59.6%25-orange)](docs/06-BENCHMARKS.md)
 
 English · [Tiếng Việt](README_VI.md)
 
@@ -47,45 +48,10 @@ memgw keeps that in one place. Every agent writes to it, every agent reads from 
 
 ## Architecture
 
-```mermaid
-flowchart LR
-    subgraph agents["🤖 Your agents"]
-        CC["Claude Code"]
-        CX["Codex CLI"]
-        OC["opencode"]
-        WEB["claude.ai / web"]
-    end
-
-    subgraph gw["memgw gateway — one local process"]
-        API["HTTP API :8930"]
-        MCP["MCP server :8931"]
-        WK["⚙️ extraction worker<br/>(background, 2 LLM calls/batch)"]
-        NU["📝 notes updater<br/>(background, agentic)"]
-    end
-
-    subgraph store["💾 One store (SQLite + git)"]
-        EV[("events<br/>raw turns · 90 days")]
-        FA[("facts<br/>one-sentence atoms · forever")]
-        NT["notes<br/>Markdown in git · forever"]
-    end
-
-    CC -- "hooks: capture" --> API
-    CX -- "transcript watcher" --> API
-    OC -- "plugin" --> API
-    WEB -- "search / save tools" --> MCP
-    CC -- "MCP tools" --> MCP
-    CX -- "MCP tools" --> MCP
-    OC -- "MCP tools" --> MCP
-
-    API -- "append (no LLM, instant)" --> EV
-    WK -- "extract + dedup" --> FA
-    EV --> WK
-    FA --> NU
-    NU -- "git commit" --> NT
-    MCP -- "hybrid search" --> FA
-    MCP -- "hybrid search" --> EV
-    MCP -- "read" --> NT
-```
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/architecture-en-dark.svg">
+  <img alt="memgw architecture: agents, gateway, store" src="docs/assets/architecture-en-light.svg">
+</picture>
 
 Three layers, each more distilled than the last:
 
@@ -100,33 +66,10 @@ never slows an agent down. Everything expensive happens later, in the background
 
 ## A session with memgw
 
-```mermaid
-sequenceDiagram
-    autonumber
-    participant A as Agent (any machine)
-    participant G as memgw gateway
-    participant S as Store
-
-    Note over A,G: session start
-    A->>G: bootstrap
-    G->>S: profile.md + topic index
-    G-->>A: injected ONCE → stays in prompt cache
-
-    Note over A,G: while you work
-    A->>G: memory_search("postgres decision")
-    G-->>A: "[decision] chose Postgres for billing — MongoDB ruled out"
-    A->>G: memory_save(type=deadend, "tried X, failed because Y")
-
-    Note over A,G: session end
-    A->>G: capture(raw turns) — instant, no LLM
-    G->>S: append events
-
-    Note over G,S: 10 min idle, in the background
-    G->>S: extract facts → dedup → update notes (git commit)
-
-    Note over A,S: next session, any agent, any machine
-    A->>G: bootstrap → it already knows you
-```
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/session-en-dark.svg">
+  <img alt="a session with memgw" src="docs/assets/session-en-light.svg">
+</picture>
 
 Retrieval follows one rule that matters: **stable context is injected once at session
 start** (profile, topic index) so it stays inside the prompt cache, while **specific
@@ -288,6 +231,10 @@ the real capture → extraction → dedup → search pipeline, LLM-judged):
 |---|---|---|
 | BM25 (default) | 58.6% | 84.5% |
 | + embeddings (`memgw embed on`) | **66.4%** | 80.3% |
+
+On [PersonaMem](https://github.com/bowen-upenn/PersonaMem) (COLM 2025, 32k-token tier,
+589 multiple-choice questions on user personalization): **59.6%** against a 25% random
+baseline, end-to-end through the same pipeline.
 
 Methodology, per-category numbers, and how to reproduce it for ~$4:
 [docs/06-BENCHMARKS.md](docs/06-BENCHMARKS.md).
