@@ -26,9 +26,12 @@ cat deploy/installer-header.sh > "$OUT"
 base64 -i "$TMP/memgw.tgz" >> "$OUT"
 chmod +x "$OUT"
 
-# self-check: the layout the header depends on must actually be in the archive
+# self-check: the layout the header depends on must actually be in the archive.
+# List into a file first: `grep -q` closing the pipe early gives tar an EPIPE,
+# which pipefail turns into a bogus failure.
 ARCHIVE_LINE=$(awk '/^__ARCHIVE__$/{print NR+1; exit}' "$OUT")
-if ! tail -n +"$ARCHIVE_LINE" "$OUT" | base64 -d | tar tz | grep -q "^memgw/package.json$"; then
+tail -n +"$ARCHIVE_LINE" "$OUT" | base64 -d | tar tz > "$TMP/contents.txt"
+if ! grep -q "^memgw/package.json$" "$TMP/contents.txt"; then
   echo "BUILD BROKEN: archive does not contain memgw/package.json" >&2
   exit 1
 fi

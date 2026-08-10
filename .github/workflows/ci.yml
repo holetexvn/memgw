@@ -94,7 +94,9 @@ jobs:
         run: |
           bash scripts/build-installer.sh
           ARCHIVE_LINE=$(awk '/^__ARCHIVE__$/{print NR+1; exit}' memgw-installer.run)
-          tail -n +"$ARCHIVE_LINE" memgw-installer.run | base64 -d | tar tz | grep -q "^memgw/package.json$"
+          # list to a file first: grep -q closing the pipe early EPIPEs tar under pipefail
+          tail -n +"$ARCHIVE_LINE" memgw-installer.run | base64 -d | tar tz > "$RUNNER_TEMP/contents.txt"
+          grep -q "^memgw/package.json$" "$RUNNER_TEMP/contents.txt"
 
   cli-windows:
     runs-on: windows-latest
@@ -116,12 +118,14 @@ jobs:
           node bin/memgw.mjs --version
           node bin/memgw.mjs init
           node bin/memgw.mjs start &
+          GW_PID=$!
           for i in $(seq 30); do curl -sf localhost:8930/health && break; sleep 0.5; done
           node bin/memgw.mjs doctor
           node bin/memgw.mjs save "CI smoke fact on Windows" --type project
           node bin/memgw.mjs search "smoke" | grep -q "CI smoke fact"
           echo '{"transcript_path":"NUL","session_id":"t"}' | node hooks/capture.mjs
           node hooks/bootstrap.mjs | head -2
+          kill $GW_PID 2>/dev/null || true
       - name: Pure-Node suites on Windows
         env:
           MEMGW_LLM_MOCK: "1"
@@ -134,9 +138,13 @@ jobs:
           MEMGW_LLM_MOCK: "1"
           MEMGW_KEY: test
           MEMGW_MCP_SECRET: s3cret
+          # own ports: the CLI step's gateway may still be releasing 8930/8931,
+          # and binding into it silently tests the WRONG server
+          MEMGW_PORT: "8942"
+          MEMGW_MCP_PORT: "8943"
         run: |
           export MEMGW_DATA_DIR="$RUNNER_TEMP/memgw-harden/data"
           node src/server.js &
-          for i in $(seq 30); do curl -sf localhost:8930/health && break; sleep 0.5; done
+          for i in $(seq 30); do curl -sf localhost:8942/health && break; sleep 0.5; done
           MEMGW_DATA_DIR="$RUNNER_TEMP/memgw-harden/data" node test/hardening-test.mjs
-          node test/mcp-smoke.mjs
+          MCP_URL=http://127.0.0.1:8943 node test/mcp-smoke.mjs
