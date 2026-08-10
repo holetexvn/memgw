@@ -31,7 +31,9 @@
     "CONTRIBUTING.md",
     "SECURITY.md",
     "AGENTS.md",
-    "CLAUDE.md"
+    "CLAUDE.md",
+    "!**/__pycache__",
+    "!**/*.pyc"
   ],
   "scripts": {
     "start": "node bin/memgw.mjs start",
