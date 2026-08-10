@@ -1,9 +1,4 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1180 580" role="img" aria-label="kiến trúc memgw">
-<defs>
-  <marker id="ab" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#0969da"/></marker>
-  <marker id="ao" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#bc4c00"/></marker>
-  <marker id="ag" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#1a7f37"/></marker>
-</defs>
 <rect x="30" y="70" width="250" height="480" rx="10" fill="#f6f8fa" stroke="#d0d7de"/>
 <text x="155" y="100" font-family="-apple-system, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif" font-size="14" font-weight="600" fill="#24292f" text-anchor="middle">🤖 Agent của bạn</text>
 <rect x="430" y="70" width="300" height="480" rx="10" fill="#f6f8fa" stroke="#d0d7de"/>
@@ -41,20 +36,20 @@
 <rect x="915" y="450" width="200" height="80" rx="8" fill="#ffffff" stroke="#d0d7de" stroke-width="1.5"/>
 <text x="1015" y="484" font-family="-apple-system, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif" font-size="15" font-weight="600" fill="#24292f" text-anchor="middle">notes</text>
 <text x="1015" y="504" font-family="-apple-system, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif" font-size="11" font-weight="normal" fill="#57606a" text-anchor="middle">Markdown · git · vĩnh viễn</text>
-<line x1="285" y1="192" x2="450" y2="192" stroke="#0969da" stroke-width="2" marker-end="url(#ab)"/>
+<line x1="285" y1="192" x2="442" y2="192" stroke="#0969da" stroke-width="2"/><polygon points="452,192 441,186.5 441,197.5" fill="#0969da"/>
 <text x="367" y="172" font-family="-apple-system, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif" font-size="12" font-weight="600" fill="#0969da" text-anchor="middle">capture</text>
 <text x="367" y="212" font-family="-apple-system, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="normal" fill="#57606a" text-anchor="middle">tức thì · không LLM</text>
-<line x1="285" y1="372" x2="450" y2="372" stroke="#0969da" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#ab)"/>
+<line x1="285" y1="372" x2="442" y2="372" stroke="#0969da" stroke-width="2" stroke-dasharray="6 4"/><polygon points="452,372 441,366.5 441,377.5" fill="#0969da"/>
 <text x="367" y="352" font-family="-apple-system, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif" font-size="12" font-weight="600" fill="#0969da" text-anchor="middle">MCP tools</text>
 <text x="367" y="392" font-family="-apple-system, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="normal" fill="#57606a" text-anchor="middle">search · save</text>
-<path d="M710 178 C 810 170, 840 170, 908 170" fill="none" stroke="#0969da" stroke-width="2" marker-end="url(#ab)"/>
+<path d="M710 178 C 810 170, 840 170, 900 170" fill="none" stroke="#0969da" stroke-width="2"/><polygon points="911,170 900,164.5 900,175.5" fill="#0969da"/>
 <text x="808" y="156" font-family="-apple-system, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif" font-size="11.5" font-weight="normal" fill="#57606a" text-anchor="middle">ghi lượt thô</text>
-<line x1="710" y1="372" x2="873" y2="372" stroke="#1a7f37" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#ag)"/>
+<line x1="710" y1="372" x2="863" y2="372" stroke="#1a7f37" stroke-width="2" stroke-dasharray="6 4"/><polygon points="874,372 863,366.5 863,377.5" fill="#1a7f37"/>
 <text x="792" y="358" font-family="-apple-system, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif" font-size="11.5" font-weight="normal" fill="#1a7f37" text-anchor="middle">hybrid search · đọc notes</text>
-<line x1="1015" y1="224" x2="1015" y2="278" stroke="#bc4c00" stroke-width="2" marker-end="url(#ao)"/>
+<line x1="1015" y1="224" x2="1015" y2="270" stroke="#bc4c00" stroke-width="2"/><polygon points="1015,281 1009.5,270 1020.5,270" fill="#bc4c00"/>
 <text x="998" y="244" font-family="-apple-system, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif" font-size="11.5" font-weight="600" fill="#bc4c00" text-anchor="end">⚙ worker: chưng cất + dedup</text>
 <text x="998" y="262" font-family="-apple-system, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="normal" fill="#57606a" text-anchor="end">background · 2 lệnh LLM/batch</text>
-<line x1="1015" y1="389" x2="1015" y2="443" stroke="#bc4c00" stroke-width="2" marker-end="url(#ao)"/>
+<line x1="1015" y1="389" x2="1015" y2="435" stroke="#bc4c00" stroke-width="2"/><polygon points="1015,446 1009.5,435 1020.5,435" fill="#bc4c00"/>
 <text x="998" y="409" font-family="-apple-system, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif" font-size="11.5" font-weight="600" fill="#bc4c00" text-anchor="end">📝 notes updater · git commit</text>
 <text x="998" y="427" font-family="-apple-system, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="normal" fill="#57606a" text-anchor="end">agentic · soát được</text>
 </svg>

@@ -82,11 +82,6 @@ const T = {
   },
 };
 
-const defs = (p) => `<defs>
-  <marker id="ab" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="${p.blue}"/></marker>
-  <marker id="ao" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="${p.orange}"/></marker>
-  <marker id="ag" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="${p.green}"/></marker>
-</defs>`;
 
 const text = (x, y, s, { size = 12, fill, weight = "normal", anchor = "middle", spacing = "" } = {}) =>
   `<text x="${x}" y="${y}" font-family="${FONT}" font-size="${size}" font-weight="${weight}" fill="${fill}" text-anchor="${anchor}"${spacing ? ` letter-spacing="${spacing}"` : ""}>${s}</text>`;
@@ -135,32 +130,35 @@ function architecture(t, p) {
   parts.push(text(1015, 484, t.notes, { size: 15, weight: 600, fill: p.ink }));
   parts.push(text(1015, 504, t.notesSub, { size: 11, fill: p.dim }));
 
+  // explicit polygon arrowheads: <marker> is unreliable in GitHub's rendering
+  const headR = (x, y, c) => `<polygon points="${x},${y} ${x - 11},${y - 5.5} ${x - 11},${y + 5.5}" fill="${c}"/>`;
+  const headD = (x, y, c) => `<polygon points="${x},${y} ${x - 5.5},${y - 11} ${x + 5.5},${y - 11}" fill="${c}"/>`;
+
   // arrows: agents -> gateway
-  parts.push(`<line x1="285" y1="192" x2="450" y2="192" stroke="${p.blue}" stroke-width="2" marker-end="url(#ab)"/>`);
+  parts.push(`<line x1="285" y1="192" x2="442" y2="192" stroke="${p.blue}" stroke-width="2"/>` + headR(452, 192, p.blue));
   parts.push(text(367, 172, t.capture, { size: 12, weight: 600, fill: p.blue }));
   parts.push(text(367, 212, t.captureSub, { size: 10.5, fill: p.dim }));
-  parts.push(`<line x1="285" y1="372" x2="450" y2="372" stroke="${p.blue}" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#ab)"/>`);
+  parts.push(`<line x1="285" y1="372" x2="442" y2="372" stroke="${p.blue}" stroke-width="2" stroke-dasharray="6 4"/>` + headR(452, 372, p.blue));
   parts.push(text(367, 352, t.tools, { size: 12, weight: 600, fill: p.blue }));
   parts.push(text(367, 392, t.toolsSub, { size: 10.5, fill: p.dim }));
 
   // API -> events
-  parts.push(`<path d="M710 178 C 810 170, 840 170, 908 170" fill="none" stroke="${p.blue}" stroke-width="2" marker-end="url(#ab)"/>`);
+  parts.push(`<path d="M710 178 C 810 170, 840 170, 900 170" fill="none" stroke="${p.blue}" stroke-width="2"/>` + headR(911, 170, p.blue));
   parts.push(text(808, 156, t.append, { size: 11.5, fill: p.dim }));
 
   // MCP -> store (search)
-  parts.push(`<line x1="710" y1="372" x2="873" y2="372" stroke="${p.green}" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#ag)"/>`);
+  parts.push(`<line x1="710" y1="372" x2="863" y2="372" stroke="${p.green}" stroke-width="2" stroke-dasharray="6 4"/>` + headR(874, 372, p.green));
   parts.push(text(792, 358, t.search, { size: 11.5, fill: p.green }));
 
   // pipeline arrows inside store
-  parts.push(`<line x1="1015" y1="224" x2="1015" y2="278" stroke="${p.orange}" stroke-width="2" marker-end="url(#ao)"/>`);
+  parts.push(`<line x1="1015" y1="224" x2="1015" y2="270" stroke="${p.orange}" stroke-width="2"/>` + headD(1015, 281, p.orange));
   parts.push(text(998, 244, t.worker, { size: 11.5, weight: 600, fill: p.orange, anchor: "end" }));
   parts.push(text(998, 262, t.workerSub, { size: 10.5, fill: p.dim, anchor: "end" }));
-  parts.push(`<line x1="1015" y1="389" x2="1015" y2="443" stroke="${p.orange}" stroke-width="2" marker-end="url(#ao)"/>`);
+  parts.push(`<line x1="1015" y1="389" x2="1015" y2="435" stroke="${p.orange}" stroke-width="2"/>` + headD(1015, 446, p.orange));
   parts.push(text(998, 409, t.notesUpd, { size: 11.5, weight: 600, fill: p.orange, anchor: "end" }));
   parts.push(text(998, 427, t.notesUpdSub, { size: 10.5, fill: p.dim, anchor: "end" }));
 
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1180 580" role="img" aria-label="${t.archAlt}">
-${defs(p)}
 ${parts.join("\n")}
 </svg>`;
 }
@@ -168,20 +166,35 @@ ${parts.join("\n")}
 function session(t, p) {
   const parts = [];
   const xs = [30, 265, 500, 735, 970];
+  const stepColor = [p.blue, p.blue, p.blue, p.orange, p.green];
+  const Y = 104; // timeline axis
+
+  // timeline axis with an explicit polygon arrowhead (markers are unreliable
+  // in GitHub's SVG rendering, so heads are drawn as real shapes)
+  parts.push(`<line x1="60" y1="${Y}" x2="1136" y2="${Y}" stroke="${p.border}" stroke-width="2"/>`);
+  parts.push(`<polygon points="1150,${Y} 1136,${Y - 6} 1136,${Y + 6}" fill="${p.border}"/>`);
+
   t.phases.forEach((ph, i) => {
     const x = xs[i];
-    parts.push(text(x + 100, 72, ph, { size: 11, weight: 600, fill: p.dim, spacing: "1" }));
-    const accent = i === 4 ? p.blue : p.border;
-    parts.push(`<rect x="${x}" y="90" width="200" height="170" rx="10" fill="${i === 4 ? p.group : p.box}" stroke="${accent}" stroke-width="${i === 4 ? 2 : 1.5}"/>`);
+    const cx = x + 100;
+    const c = stepColor[i];
+    // phase label above the axis
+    parts.push(text(cx, 66, ph, { size: 11, weight: 600, fill: p.dim, spacing: "1" }));
+    // numbered node on the axis
+    parts.push(`<circle cx="${cx}" cy="${Y}" r="15" fill="${c}"/>`);
+    parts.push(text(cx, Y + 4.5, String(i + 1), { size: 13, weight: 700, fill: p.box }));
+    // stem from node to card
+    parts.push(`<line x1="${cx}" y1="${Y + 15}" x2="${cx}" y2="138" stroke="${p.border}" stroke-width="2"/>`);
+    // card
+    const last = i === 4;
+    parts.push(`<rect x="${x}" y="138" width="200" height="140" rx="10" fill="${last ? p.group : p.box}" stroke="${last ? p.green : p.border}" stroke-width="${last ? 2 : 1.5}"/>`);
     const [title, lines] = t.cards[i];
-    parts.push(text(x + 100, 125, title, { size: 14.5, weight: 600, fill: i === 4 ? p.blue : p.ink }));
+    parts.push(text(cx, 168, title, { size: 14.5, weight: 600, fill: last ? p.green : p.ink }));
     lines.forEach((l, j) => {
-      if (l) parts.push(text(x + 100, 158 + j * 24, l, { size: 12, fill: j === 1 && i === 4 ? p.ink : p.dim, weight: j === 1 && i === 4 ? 600 : "normal" }));
+      if (l) parts.push(text(cx, 198 + j * 24, l, { size: 12, fill: last && j === 1 ? p.ink : p.dim, weight: last && j === 1 ? 600 : "normal" }));
     });
-    if (i < 4) parts.push(`<line x1="${x + 204}" y1="175" x2="${x + 261}" y2="175" stroke="${p.blue}" stroke-width="2" marker-end="url(#ab)"/>`);
   });
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 290" role="img" aria-label="memgw session lifecycle">
-${defs(p)}
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 300" role="img" aria-label="memgw session lifecycle">
 ${parts.join("\n")}
 </svg>`;
 }
