@@ -294,8 +294,8 @@ deleted, the newest 200 events are always kept, and `days < 7` is refused withou
     "facts_active": 87, "facts_superseded": 14
   },
   "by_source": [
-    { "source": "cc-macbook", "n": 890 },
-    { "source": "hermes", "n": 412 }
+    { "source": "cc-macbook", "n": 890, "last_ts": 1778429075106 },
+    { "source": "hermes", "n": 412, "last_ts": 1778401120553 }
   ],
   "by_type": [
     { "type": "preference", "n": 31 },

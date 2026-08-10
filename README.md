@@ -17,7 +17,7 @@ can all read from and write to. Your agents stop forgetting you every session.
 English · [Tiếng Việt](README_VI.md)
 
 ```bash
-npx @holetex/memgw setup
+npm install -g @holetex/memgw && memgw setup
 ```
 
 </div>
@@ -29,8 +29,12 @@ loud: reboot supervision is installed automatically on macOS (launchd) and Linux
 (systemd --user) from a permanent checkout (`npm i -g @holetex/memgw` or a clone), while
 Windows / npx-cache runs get the exact Task Scheduler / install command printed
 instead; opencode gets a one-line copy command; Codex *capture* is a separate
-`memgw watch --agent codex` process. Prefer doing everything by hand?
-`npx @holetex/memgw start` just starts the gateway and prints the commands.
+`memgw watch --agent codex` process.
+
+Just want to try it without installing anything? `npx @holetex/memgw setup` works
+too — same wizard, but running from the npx cache means no reboot supervision
+(the wizard says so and prints the permanent-install command). Prefer doing
+everything by hand? `memgw start` just starts the gateway and prints the commands.
 
 Prefer delegating? Tell your agent: *"install memgw — follow
 https://github.com/holetexvn/memgw/blob/main/AGENTS.md"*. [AGENTS.md](AGENTS.md) is a
@@ -124,14 +128,19 @@ that failed and why. Agents love repeating the same mistake; this is what stops 
 npx @holetex/memgw start              # zero config, binds 127.0.0.1
 ```
 
-Add an LLM key when you want facts extracted rather than just captured:
+No LLM key yet? That is the default path, not a degraded one: capture keeps working,
+events queue locally, and when you add a key later the backlog gets distilled — nothing
+is lost. Add it whenever you are ready:
 
 ```bash
-echo 'MEMGW_LLM_API_KEY=sk-...' >> ~/.memgw/env
+memgw key            # masked prompt; provider auto-detected from the key
 ```
 
-Any OpenAI-compatible endpoint works: OpenAI, DeepSeek, Groq, OpenRouter, or a local
-Ollama or vLLM server. Use a cheap model, the worker runs all day.
+OpenAI, Anthropic, Groq, and OpenRouter keys are recognised by their prefix and
+configure the endpoint and a sensible cheap model automatically. Any other
+OpenAI-compatible endpoint (DeepSeek, local Ollama or vLLM) works too — set
+`MEMGW_LLM_BASE_URL` in `~/.memgw/env`. The key lives in that file on your machine
+and is sent only to the provider you chose.
 
 No key at all? `npx @holetex/memgw start --mock` exercises the entire pipeline without one.
 
@@ -201,6 +210,7 @@ memgw doctor     Diagnose configuration and connectivity
 memgw search     Search facts from the terminal
 memgw save       Save a fact from the terminal
 memgw forget     Retire facts (dry-run by default)
+memgw key        Set the LLM key later (provider auto-detected, gateway restarted)
 memgw embed      Toggle semantic search on or off
 memgw watch      Follow agent transcripts
 memgw hooks      Install Claude Code hooks

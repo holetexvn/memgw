@@ -123,16 +123,20 @@ và lý do. Agent rất thích lặp lại đúng sai lầm cũ; đây là thứ
 npx @holetex/memgw start              # không cần config, bind 127.0.0.1
 ```
 
-Thêm key LLM khi muốn chưng cất fact thay vì chỉ capture:
+Chưa muốn đưa key LLM? Đó là đường mặc định chứ không phải chế độ thiếu thốn: capture
+vẫn chạy, events xếp hàng tại máy, và khi bạn thêm key thì backlog được chưng cất hồi
+tố — không mất gì cả. Sẵn sàng lúc nào thêm lúc đó:
 
 ```bash
-echo 'MEMGW_LLM_API_KEY=sk-...' >> ~/.memgw/env
+memgw key            # nhập che ký tự; tự nhận diện provider từ key
 ```
 
-Mọi endpoint tương thích OpenAI đều dùng được: OpenAI, DeepSeek, Groq, OpenRouter, hay
-Ollama / vLLM chạy local. Dùng model rẻ — worker chạy cả ngày.
+Key của OpenAI, Anthropic, Groq, OpenRouter được nhận diện qua prefix và tự cấu hình
+endpoint + model rẻ phù hợp. Endpoint tương thích OpenAI khác (DeepSeek, Ollama / vLLM
+local) cũng dùng được — set `MEMGW_LLM_BASE_URL` trong `~/.memgw/env`. Key nằm trong
+file đó trên máy bạn, chỉ được gửi tới đúng provider bạn chọn.
 
-Chưa có key? `npx @holetex/memgw start --mock` chạy toàn bộ pipeline mà không cần key.
+Không có key nào cả? `npx @holetex/memgw start --mock` chạy toàn bộ pipeline mà không cần key.
 
 ### Server
 
@@ -193,6 +197,7 @@ memgw doctor     Chẩn đoán cấu hình và kết nối
 memgw search     Tìm fact từ terminal
 memgw save       Lưu fact từ terminal
 memgw forget     Loại bỏ fact (mặc định dry-run)
+memgw key        Thêm key LLM sau (tự nhận diện provider, tự restart gateway)
 memgw embed      Bật/tắt semantic search
 memgw watch      Theo dõi transcript của agent
 memgw hooks      Cài hook cho Claude Code

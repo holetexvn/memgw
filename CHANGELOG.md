@@ -4,6 +4,23 @@ All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versioning follows [Semantic Versioning](https://semver.org/).
 
+## [1.0.4] - 2026-08-10
+
+### Added
+- `memgw key`: add or replace the LLM key after setup with one command --
+  masked prompt, provider auto-detected from the key prefix (OpenAI, Anthropic,
+  Groq, OpenRouter -> endpoint and default model configured automatically), and
+  the gateway is restarted so the key is live. Queued keyless events are
+  distilled on the next worker pass.
+- `memgw status` now shows per-agent last-seen times ("agents seen"), so
+  "which agents are actually connected" has an answer; /stats by_source gained
+  `last_ts`.
+
+### Changed
+- setup's key prompt explains that skipping is safe (events queue, nothing is
+  lost) and that the key stays on the machine; README quick start now leads
+  with the permanent install (`npm install -g`) and keeps npx as the try-it path.
+
 ## [1.0.3] - 2026-08-10
 
 ### Fixed

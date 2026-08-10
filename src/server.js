@@ -229,7 +229,7 @@ export function createServer(cfg = loadConfig()) {
           }
         })(),
       },
-      by_source: db.prepare(`SELECT source, COUNT(*) n FROM events GROUP BY source ORDER BY n DESC`).all(),
+      by_source: db.prepare(`SELECT source, COUNT(*) n, MAX(ts) last_ts FROM events GROUP BY source ORDER BY n DESC`).all(),
       by_type: db
         .prepare(`SELECT type, COUNT(*) n FROM facts WHERE status='active' GROUP BY type ORDER BY n DESC`)
         .all(),

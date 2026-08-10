@@ -55,6 +55,7 @@ npx @holetex/memgw <command> [options]
 | `search <query>` | Search facts from the command line |
 | `save <text>` | Save a fact from the command line |
 | `forget <query>` | Retire matching facts (dry-run; add `--yes` to apply) |
+| `key [api-key]` | Set the LLM key later: masked prompt, provider auto-detected from the key prefix (OpenAI / Anthropic / Groq / OpenRouter), gateway restarted to load it |
 | `embed on\|off\|status` | Toggle the optional semantic search layer (see below) |
 | `watch` | Watch agent transcripts and capture them (see `--agent`) |
 | `hooks` | Install Claude Code hooks into `~/.claude/settings.json` |

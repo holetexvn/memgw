@@ -47,6 +47,7 @@ ${c.b("Commands")}
   save <text>        Save a fact from the command line
   forget <query>     Retire matching facts (dry-run; add --yes to apply)
   embed on|off|status  Toggle the optional semantic search layer
+  key [api-key]      Set the LLM key later (masked prompt; restarts the gateway)
   watch              Watch agent transcripts and capture them (see --agent)
   hooks              Install Claude Code hooks into ~/.claude/settings.json
   help               This message
@@ -182,8 +183,20 @@ async function cmdStatus() {
     console.log(`${c.b("events")}  ${k.events} total, ${k.events_pending} pending extraction`);
     console.log(`${c.b("facts")}   ${k.facts_active} active, ${k.facts_superseded} superseded`);
     if (s.by_source.length) {
-      console.log(`\n${c.b("by source")}`);
-      s.by_source.forEach((r) => console.log(`  ${r.source.padEnd(24)} ${r.n}`));
+      // "which agents are actually connected" = which sources delivered events,
+      // and how recently -- a wired-up agent that never captures is not connected
+      console.log(`\n${c.b("agents seen")}`);
+      const ago = (ts) => {
+        if (!ts) return "";
+        const m = Math.round((Date.now() - ts) / 60000);
+        if (m < 1) return "just now";
+        if (m < 60) return `${m}m ago`;
+        if (m < 48 * 60) return `${Math.round(m / 60)}h ago`;
+        return `${Math.round(m / 1440)}d ago`;
+      };
+      s.by_source.forEach((r) =>
+        console.log(`  ${r.source.padEnd(28)} ${String(r.n).padStart(6)} events   ${c.dim(`last ${ago(r.last_ts)}`)}`)
+      );
     }
     if (s.by_type.length) {
       console.log(`\n${c.b("by type")}`);
@@ -398,6 +411,92 @@ async function cmdEmbed() {
   }
 }
 
+// Key prefixes are stable, documented identifiers -- users should not need to
+// know what a "base URL" is to paste the key they have. sk- stays last: it is
+// the catch-all (OpenAI, and OpenAI-shaped keys like DeepSeek, which need a
+// manual MEMGW_LLM_BASE_URL and are told so in the docs).
+const PROVIDERS = [
+  { prefix: "sk-ant-", name: "Anthropic", base: "https://api.anthropic.com/v1", model: "claude-haiku-4-5" },
+  { prefix: "sk-or-", name: "OpenRouter", base: "https://openrouter.ai/api/v1", model: "openai/gpt-5-mini" },
+  { prefix: "gsk_", name: "Groq", base: "https://api.groq.com/openai/v1", model: "llama-3.3-70b-versatile" },
+  { prefix: "sk-", name: "OpenAI", base: "https://api.openai.com/v1", model: "gpt-5-mini" },
+];
+const detectProvider = (key) => PROVIDERS.find((p) => key.startsWith(p.prefix)) || null;
+const saveLlmKey = (key, modelFlag, cfg) => {
+  const p = detectProvider(key);
+  const model = modelFlag || (p ? p.model : cfg.llm.model);
+  upsertEnvFile({ MEMGW_LLM_API_KEY: key, MEMGW_LLM_MODEL: model, ...(p ? { MEMGW_LLM_BASE_URL: p.base } : {}) });
+  return { provider: p ? p.name : "custom (set MEMGW_LLM_BASE_URL if not OpenAI-compatible default)", model };
+};
+
+// `memgw key`: the trust path. setup deliberately lets people skip the LLM key
+// (capture works keyless, events just queue), so adding it LATER must be one
+// command -- not "edit an env file, then find and restart the right process".
+async function cmdKey() {
+  applyFlagsToEnv();
+  const cfg = loadConfig();
+  let key = argv[1] && !argv[1].startsWith("--") ? argv[1] : "";
+  if (!key) {
+    if (!process.stdin.isTTY) {
+      console.error("Usage: memgw key <api-key> [--model gpt-5-mini]");
+      process.exit(1);
+    }
+    console.log(c.dim(`The key is written to ${ENV_FILE} on this machine and sent only to the LLM provider you configure. Nothing else ever sees it.`));
+    const rl = (await import("node:readline/promises")).createInterface({ input: process.stdin, output: process.stdout });
+    const q = "LLM API key (OpenAI-compatible): ";
+    if (typeof rl._writeToOutput === "function") {
+      const orig = rl._writeToOutput.bind(rl);
+      rl._writeToOutput = (s) => orig(/[\r\n]/.test(s) || s.includes(q) ? s : "*");
+      key = (await rl.question(q)).trim();
+      rl._writeToOutput = orig;
+    } else {
+      console.log(c.dim("  (this Node version cannot mask input -- the key will be visible as you type)"));
+      key = (await rl.question(q)).trim();
+    }
+    rl.close();
+  }
+  if (!key) return console.error(c.r("No key given -- nothing changed."));
+  const { provider, model } = saveLlmKey(key, opt("model", null), cfg);
+  console.log(`${c.g("saved")} ${ENV_FILE} ${c.dim(`(${provider} · model ${model})`)}`);
+
+  // config is read at startup, so a running gateway must be bounced to load it
+  const health = () =>
+    fetch(`http://127.0.0.1:${cfg.port}/health`, { signal: AbortSignal.timeout(2000) })
+      .then((r) => r.json())
+      .catch(() => null);
+  let live = await health();
+  if (live && process.platform === "win32") {
+    return console.log(`${c.y("note")}  restart the gateway to load the key (stop it, then: memgw start)`);
+  }
+  if (live) {
+    const { execFileSync } = await import("node:child_process");
+    try { execFileSync("pkill", ["-f", "memgw.mjs start"], { stdio: "ignore" }); } catch {}
+    try { execFileSync("pkill", ["-f", "node src/server.js"], { stdio: "ignore" }); } catch {}
+    let back = null;
+    for (let i = 0; i < 16 && !back; i++) { await new Promise((r) => setTimeout(r, 500)); back = await health(); }
+    if (!back) {
+      // no supervision picked it up -- start directly, logged like setup does
+      const { openSync } = await import("node:fs");
+      const fd = openSync(join(HOME_DIR, "gateway.log"), "a");
+      spawn(process.execPath, [join(ROOT, "bin", "memgw.mjs"), "start"], { detached: true, stdio: ["ignore", fd, fd] }).unref();
+      for (let i = 0; i < 16 && !back; i++) { await new Promise((r) => setTimeout(r, 500)); back = await health(); }
+    }
+    live = back;
+  }
+  if (live?.llm?.configured || live?.llm?.mock) {
+    console.log(`${c.g("ok")}    gateway restarted and loaded the key`);
+    try {
+      const s = await api(cfg, "/stats");
+      if (s.counts.events_pending)
+        console.log(c.dim(`      ${s.counts.events_pending} queued events will be distilled on the next worker pass -- nothing was lost while running keyless`));
+    } catch {}
+  } else if (live) {
+    console.log(`${c.y("warn")}  gateway is up but still reports no key -- restart it by hand and check ~/.memgw/gateway.log`);
+  } else {
+    console.log(c.dim("gateway not running -- the key will be used on the next start"));
+  }
+}
+
 // One-time wizard: everything a new machine needs, in one command.
 // Idempotent -- rerunning repairs or updates instead of duplicating.
 async function cmdSetup() {
@@ -453,14 +552,22 @@ async function cmdSetup() {
   const cfg = loadConfig({ autoKey: true });
   console.log(`${c.g("ok")}    config ${ENV_FILE} (keys ${cfg.generated.length ? "generated" : "present"})`);
 
-  // 3. LLM key -- the one thing that cannot be automated
+  // 3. LLM key -- the one thing that cannot be automated. Skipping must feel
+  // SAFE: new users have no reason to trust a fresh install with an API key,
+  // and keyless mode genuinely loses nothing (events queue until a key shows up).
   if (!cfg.llm.apiKey && !cfg.llm.mock) {
-    const key = await askSecret("LLM API key (OpenAI-compatible; Enter to skip -- capture works, no facts until set): ");
+    if (tty) {
+      console.log(c.dim(`  An LLM key lets memgw distil sessions into facts. It is written to ${ENV_FILE}`));
+      console.log(c.dim(`  on this machine and sent only to the provider you choose -- never anywhere else.`));
+      console.log(c.dim(`  Skipping is fine: capture still works, events queue, and adding a key later`));
+      console.log(c.dim(`  distils the backlog. Nothing is lost.`));
+    }
+    const key = await askSecret("LLM API key -- OpenAI, Anthropic, Groq, OpenRouter... auto-detected (Enter to skip): ");
     if (key) {
-      upsertEnvFile({ MEMGW_LLM_API_KEY: key, MEMGW_LLM_MODEL: cfg.llm.model });
-      console.log(`${c.g("ok")}    LLM key saved (model ${cfg.llm.model})`);
+      const { provider, model } = saveLlmKey(key, null, cfg);
+      console.log(`${c.g("ok")}    LLM key saved -- ${provider}, model ${model}`);
     } else {
-      console.log(`${c.y("warn")}  no LLM key -- add MEMGW_LLM_API_KEY to ${ENV_FILE} later`);
+      console.log(`${c.y("note")}  running keyless -- events are captured and queued; add a key anytime with: memgw key`);
     }
   } else {
     console.log(`${c.g("ok")}    llm ${cfg.llm.mock ? "mock mode" : cfg.llm.model}`);
@@ -642,6 +749,7 @@ const commands = {
   save: cmdSave,
   forget: cmdForget,
   embed: cmdEmbed,
+  key: cmdKey,
   watch: cmdWatch,
   hooks: cmdHooks,
   setup: cmdSetup,

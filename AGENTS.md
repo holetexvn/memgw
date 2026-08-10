@@ -22,13 +22,15 @@ systemd --user on Linux; on Windows it prints the Task Scheduler command — run
 Rules for you:
 
 1. **The LLM key is the user's decision.** Non-interactive setup skips the key, which
-   leaves memgw in capture-only mode (raw events stored, no fact extraction). Ask the
-   user for an OpenAI-compatible API key and which model they want (a cheap one is
-   right — the worker runs all day), then append it yourself:
+   leaves memgw in capture-only mode — a safe default, nothing is lost: events queue
+   and get distilled retroactively once a key arrives. Tell the user this explicitly;
+   do not pressure them for a key. When they provide one:
    ```bash
-   printf 'MEMGW_LLM_API_KEY=%s\nMEMGW_LLM_MODEL=gpt-5-mini\n' "<key>" >> ~/.memgw/env
+   npx @holetex/memgw key "<key>"     # provider auto-detected from the prefix
    ```
-   Never echo the key back, never commit it, never send it anywhere else.
+   (OpenAI, Anthropic, Groq, OpenRouter are recognised; the command also restarts the
+   gateway so the key is live.) Never echo the key back, never commit it, never send
+   it anywhere else.
 2. **Verify, don't assume.** After setup:
    ```bash
    curl -sf http://127.0.0.1:8930/health     # {"ok":true,...}
