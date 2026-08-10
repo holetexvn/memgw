@@ -14,8 +14,19 @@ if (!DATA) throw new Error("MEMGW_DATA_DIR must be set (run via test/run-all.sh)
 let pass = 0, fail = 0;
 const ok = (name) => { console.log(`PASS ${name}`); pass++; };
 const no = (name, why) => { console.log(`FAIL ${name}: ${why}`); fail++; };
-const api = (path, opts = {}) =>
-  fetch(`${URL_}${path}`, { ...opts, headers: { authorization: `Bearer ${KEY}`, "content-type": "application/json", ...opts.headers } });
+// Retry once on a dead keep-alive socket: the oversized-body checks make the
+// server close the connection after its 413, and undici may hand the next
+// request that same closed connection (reliably reproduced on Windows).
+const api = async (path, opts = {}) => {
+  const go = () =>
+    fetch(`${URL_}${path}`, { ...opts, headers: { authorization: `Bearer ${KEY}`, "content-type": "application/json", ...opts.headers } });
+  try {
+    return await go();
+  } catch (err) {
+    if (String(err?.cause?.code) !== "UND_ERR_SOCKET") throw err;
+    return go();
+  }
+};
 
 // 1. Path traversal on /notes is rejected
 {
