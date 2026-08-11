@@ -4,6 +4,13 @@ All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versioning follows [Semantic Versioning](https://semver.org/).
 
+## [1.0.6](https://github.com/holetexvn/memgw/compare/v1.0.5...v1.0.6) (2026-08-11)
+
+
+### Miscellaneous Chores
+
+* automate releases with release-please ([802cd39](https://github.com/holetexvn/memgw/commit/802cd39c426187ab50607951cf2d0784affdf2bb))
+
 ## [1.0.5] - 2026-08-11
 
 ### Fixed
