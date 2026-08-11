@@ -94,21 +94,24 @@ in the same commit or CI will tell you.
 
 Please do not open a public issue for a vulnerability. See [SECURITY.md](SECURITY.md).
 
-## Release checklist
+## Commits and releases
 
-Releasing is tag-driven: pushing a `v*` tag makes the Release workflow run the
-full suite, publish to npm (trusted publishing — no token, no OTP), and create
-the GitHub release from the matching CHANGELOG section.
+Commits on main follow [Conventional Commits](https://www.conventionalcommits.org):
+`fix:` (patch), `feat:` (minor), `feat!:` or a `BREAKING CHANGE:` footer (major);
+`chore:`/`docs:`/`test:` never trigger a release.
 
-1. Add a `## [x.y.z]` section to `CHANGELOG.md` and run
-   `npm version x.y.z --no-git-tag-version`.
-2. Commit, then `git tag vx.y.z && git push origin main vx.y.z`.
-3. CI is keyless by design, so two quality gates still run by hand when relevant:
-   `bash scripts/test-effectiveness.sh` against a scratch `MEMGW_HOME` with a real
-   LLM key (T2 signal-vs-noise and T4b recap immunity must pass), and — if the
-   installer changed — `bash scripts/build-installer.sh` smoked on a throwaway VM.
+Releasing is fully automated by [release-please](https://github.com/googleapis/release-please):
+the bot keeps a running **"release vX.Y.Z" PR** on main with the version bump and
+the generated CHANGELOG section. **Merging that PR is the release** — it tags,
+creates the GitHub release, runs the full test suite, and publishes to npm via
+trusted publishing (OIDC, provenance — no tokens anywhere).
 
-The workflow refuses to publish when the tag and `package.json` disagree.
+Two quality gates still run by hand when relevant, because CI is keyless by
+design: `bash scripts/test-effectiveness.sh` against a scratch `MEMGW_HOME` with
+a real LLM key (T2 signal-vs-noise and T4b recap immunity must pass), and — if
+the installer changed — `bash scripts/build-installer.sh` smoked on a throwaway VM.
+
+Emergency manual path: `npm publish` from a checkout of the tag still works.
 
 ## Known follow-ups (good first issues)
 

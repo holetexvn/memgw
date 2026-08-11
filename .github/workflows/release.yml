@@ -1,22 +1,40 @@
 name: Release
 
-# Pushing a v* tag ships that version: full test suite, npm publish via
-# trusted publishing (OIDC -- no token, no OTP), then a GitHub release with
-# the matching CHANGELOG section. Plain merges to main do NOT publish; the
-# tag is the explicit "ship it" signal.
+# release-please owns versioning: it reads Conventional Commits on main
+# (fix: -> patch, feat: -> minor, feat!: -> major), maintains a running
+# "release vX.Y.Z" PR with the generated CHANGELOG section, and when that PR
+# is merged it creates the tag and the GitHub release. Only then does the
+# publish job run: full test suite, then npm via trusted publishing (OIDC --
+# no token, no OTP) with provenance. Ordinary merges never publish.
 on:
   push:
-    tags: ["v*"]
+    branches: [main]
 
 permissions:
-  contents: write # create the GitHub release
-  id-token: write # npm trusted publishing (OIDC)
+  contents: write
+  pull-requests: write
 
 jobs:
-  release:
+  release-please:
     runs-on: ubuntu-latest
+    outputs:
+      release_created: ${{ steps.rp.outputs.release_created }}
+      tag_name: ${{ steps.rp.outputs.tag_name }}
+    steps:
+      - uses: googleapis/release-please-action@v4
+        id: rp
+
+  publish:
+    needs: release-please
+    if: needs.release-please.outputs.release_created == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # npm trusted publishing (OIDC)
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.release-please.outputs.tag_name }}
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -26,26 +44,7 @@ jobs:
         run: sudo apt-get install -y jq
       - name: Full test suite
         run: bash test/run-all.sh
-      - name: Tag must match package.json
-        run: |
-          TAG="${GITHUB_REF_NAME#v}"
-          PKG=$(node -p "require('./package.json').version")
-          if [ "$TAG" != "$PKG" ]; then
-            echo "tag v$TAG does not match package.json $PKG -- refusing to publish"
-            exit 1
-          fi
       - name: npm >= 11.5 (OIDC trusted publishing support)
         run: npm install -g npm@latest
       - name: Publish to npm (trusted publishing + provenance)
         run: npm publish --provenance --access public
-      - name: GitHub release from the changelog
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          VER="${GITHUB_REF_NAME#v}"
-          awk -v ver="$VER" '
-            $0 ~ "^## \\[" ver "\\]" { f=1; next }
-            /^## \[/ { f=0 }
-            f' CHANGELOG.md > /tmp/notes.md
-          if [ ! -s /tmp/notes.md ]; then echo "No CHANGELOG section for $VER" > /tmp/notes.md; fi
-          gh release create "$GITHUB_REF_NAME" --title "memgw $GITHUB_REF_NAME" --notes-file /tmp/notes.md --latest
