@@ -96,12 +96,19 @@ Please do not open a public issue for a vulnerability. See [SECURITY.md](SECURIT
 
 ## Release checklist
 
-CI is keyless by design, so two quality gates run by hand before every tag:
+Releasing is tag-driven: pushing a `v*` tag makes the Release workflow run the
+full suite, publish to npm (trusted publishing — no token, no OTP), and create
+the GitHub release from the matching CHANGELOG section.
 
-1. `bash scripts/test-effectiveness.sh` against a scratch `MEMGW_HOME` with a real
-   LLM key — T2 (signal vs noise) and T4b (recap immunity) must pass.
-2. `bash scripts/build-installer.sh` and smoke the produced `memgw-installer.run`
-   on a throwaway VM if the installer changed.
+1. Add a `## [x.y.z]` section to `CHANGELOG.md` and run
+   `npm version x.y.z --no-git-tag-version`.
+2. Commit, then `git tag vx.y.z && git push origin main vx.y.z`.
+3. CI is keyless by design, so two quality gates still run by hand when relevant:
+   `bash scripts/test-effectiveness.sh` against a scratch `MEMGW_HOME` with a real
+   LLM key (T2 signal-vs-noise and T4b recap immunity must pass), and — if the
+   installer changed — `bash scripts/build-installer.sh` smoked on a throwaway VM.
+
+The workflow refuses to publish when the tag and `package.json` disagree.
 
 ## Known follow-ups (good first issues)
 
