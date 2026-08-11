@@ -83,7 +83,7 @@ npx @holetex/memgw doctor                        # run this first whenever somet
 ```bash
 # Claude Code: capture + session bootstrap, then the MCP tools
 npx @holetex/memgw hooks
-claude mcp add --transport http memgw http://127.0.0.1:8931/mcp \
+claude mcp add --scope user --transport http memgw http://127.0.0.1:8931/mcp \
   --header "Authorization: Bearer <MEMGW_KEY>"
 
 # Codex CLI (no hooks, so use the watcher)

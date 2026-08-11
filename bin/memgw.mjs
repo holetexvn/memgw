@@ -95,7 +95,7 @@ ${c.b("Connect your agents")}
 
 ${c.b("Claude Code")}
   npx @holetex/memgw hooks                       ${c.dim("# capture + session bootstrap")}
-  claude mcp add --transport http memgw ${mcp} \\
+  claude mcp add --scope user --transport http memgw ${mcp} \\
     --header "Authorization: Bearer ${cfg.key}"
 
 ${c.b("Codex CLI")}
@@ -656,7 +656,10 @@ async function cmdSetup() {
     if (!argv.includes("--write")) argv.push("--write"); // reuse the hooks installer below
     cmdHooks();
     try {
-      run("claude", ["mcp", "add", "--transport", "http", "memgw", mcpUrl, "--header", `Authorization: Bearer ${cfg.key}`]);
+      // --scope user: the default (local) scope registers the server only for the
+      // directory setup happens to run in -- every OTHER project would get the
+      // bootstrap hooks but no MCP tools, which reads as "memgw half works"
+      run("claude", ["mcp", "add", "--scope", "user", "--transport", "http", "memgw", mcpUrl, "--header", `Authorization: Bearer ${cfg.key}`]);
       console.log(`${c.g("ok")}    Claude Code MCP registered`);
     } catch (e) {
       console.log(`${c.y("note")}  claude mcp add: ${String(e.stderr || e.message).split("\n")[0].slice(0, 90)}`);

@@ -4,6 +4,16 @@ All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versioning follows [Semantic Versioning](https://semver.org/).
 
+## [1.0.5] - 2026-08-11
+
+### Fixed
+- `setup` registered the Claude Code MCP server at the default (local) scope,
+  so only the directory setup ran in could use the memgw tools -- every other
+  project got the bootstrap context but no `memory_search`. The wizard and all
+  documented commands now use `claude mcp add --scope user`. Existing installs:
+  `claude mcp remove memgw` (in the directory where setup ran), then re-run
+  `memgw setup` or the documented add command.
+
 ## [1.0.4] - 2026-08-10
 
 ### Fixed

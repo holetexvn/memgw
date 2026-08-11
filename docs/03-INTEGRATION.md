@@ -134,7 +134,7 @@ Add this to `~/.claude/settings.json` (keep whatever is already there):
 Needed with either option; the hooks do not cover recall mid-session.
 
 ```bash
-claude mcp add --transport http memgw http://127.0.0.1:8931/mcp \
+claude mcp add --scope user --transport http memgw http://127.0.0.1:8931/mcp \
   --header "Authorization: Bearer <KEY>"
 ```
 

@@ -166,7 +166,7 @@ chọn. Xem [docs/02-OPERATIONS.md](docs/02-OPERATIONS.md).
 
 ```bash
 npx @holetex/memgw hooks                        # Claude Code: capture + bootstrap
-claude mcp add --transport http memgw http://127.0.0.1:8931/mcp \
+claude mcp add --scope user --transport http memgw http://127.0.0.1:8931/mcp \
   --header "Authorization: Bearer $MEMGW_KEY"
 
 codex mcp add memgw --url http://127.0.0.1:8931/mcp/<MEMGW_MCP_SECRET>
