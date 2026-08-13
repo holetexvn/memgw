@@ -1,7 +1,7 @@
 // Extraction worker: events (processed=0) -> facts, with dedup.
 // Exactly two LLM calls per batch: one extract, one dedup. No agentic loop here,
 // which keeps this layer cheap and predictable.
-import { chat, parseJsonArray } from "./llm.js";
+import { chat, parseJsonArray, llmReady } from "./llm.js";
 import { EXTRACT_SYSTEM, extractUser, DEDUP_SYSTEM, dedupUser } from "./prompts.js";
 import { searchFacts, insertFact, supersedeFact } from "./db.js";
 
@@ -10,6 +10,11 @@ const IDLE_MS = 10 * 60 * 1000; // a session must be idle this long before we di
 const VALID_TYPES = new Set(["preference", "decision", "instruction", "project", "deadend", "episode"]);
 
 export async function runWorker(db, { force = false, session = null } = {}) {
+  // Extraction off (no key, not mock): return quietly. Firing doomed requests
+  // every interval would only fill worker_runs with 401s and hide real errors.
+  if (!llmReady())
+    return { sessions: 0, events_in: 0, facts_new: 0, facts_merged: 0, tokens_in: 0, tokens_out: 0, error: null, skipped: "llm off" };
+
   // force must cover clock-skewed events too (capture tolerates ts up to +5 min):
   // "flushed" has to mean flushed, not "flushed except the skewed tail"
   const idleBefore = force ? Date.now() + 600_000 : Date.now() - IDLE_MS;

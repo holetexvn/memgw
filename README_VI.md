@@ -198,7 +198,7 @@ memgw doctor     Chẩn đoán cấu hình và kết nối
 memgw search     Tìm fact từ terminal
 memgw save       Lưu fact từ terminal
 memgw forget     Loại bỏ fact (mặc định dry-run)
-memgw key        Thêm key LLM sau (tự nhận diện provider, tự restart gateway)
+memgw key        Thêm key LLM sau (tự nhận diện provider); `key off` tắt hẳn mọi lệnh gọi LLM
 memgw embed      Bật/tắt semantic search
 memgw watch      Theo dõi transcript của agent
 memgw hooks      Cài hook cho Claude Code

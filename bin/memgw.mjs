@@ -47,7 +47,7 @@ ${c.b("Commands")}
   save <text>        Save a fact from the command line
   forget <query>     Retire matching facts (dry-run; add --yes to apply)
   embed on|off|status  Toggle the optional semantic search layer
-  key [api-key]      Set the LLM key later (masked prompt; restarts the gateway)
+  key [api-key|off]  Set the LLM key later, or turn extraction off (restarts the gateway)
   watch              Watch agent transcripts and capture them (see --agent)
   hooks              Install Claude Code hooks into ~/.claude/settings.json
   help               This message
@@ -411,6 +411,34 @@ async function cmdEmbed() {
   }
 }
 
+// Config is read once at startup, so changing the key means bouncing the
+// gateway. Supervision (launchd/systemd) usually brings it back; if nothing
+// does, start it directly with its output logged like setup does.
+async function restartGateway(cfg) {
+  const health = () =>
+    fetch(`http://127.0.0.1:${cfg.port}/health`, { signal: AbortSignal.timeout(2000) })
+      .then((r) => r.json())
+      .catch(() => null);
+  let live = await health();
+  if (!live) return null; // not running: the new config applies on the next start
+  if (process.platform === "win32") {
+    console.log(`${c.y("note")}  restart the gateway to apply (stop it, then: memgw start)`);
+    return live;
+  }
+  const { execFileSync } = await import("node:child_process");
+  try { execFileSync("pkill", ["-f", "memgw.mjs start"], { stdio: "ignore" }); } catch {}
+  try { execFileSync("pkill", ["-f", "node src/server.js"], { stdio: "ignore" }); } catch {}
+  let back = null;
+  for (let i = 0; i < 16 && !back; i++) { await new Promise((r) => setTimeout(r, 500)); back = await health(); }
+  if (!back) {
+    const { openSync } = await import("node:fs");
+    const fd = openSync(join(HOME_DIR, "gateway.log"), "a");
+    spawn(process.execPath, [join(ROOT, "bin", "memgw.mjs"), "start"], { detached: true, stdio: ["ignore", fd, fd] }).unref();
+    for (let i = 0; i < 16 && !back; i++) { await new Promise((r) => setTimeout(r, 500)); back = await health(); }
+  }
+  return back;
+}
+
 // Key prefixes are stable, documented identifiers -- users should not need to
 // know what a "base URL" is to paste the key they have. sk- stays last: it is
 // the catch-all (OpenAI, and OpenAI-shaped keys like DeepSeek, which need a
@@ -435,10 +463,23 @@ const saveLlmKey = (key, modelFlag, cfg) => {
 async function cmdKey() {
   applyFlagsToEnv();
   const cfg = loadConfig();
+  // `memgw key off` -- turn extraction off without touching the env file by hand.
+  // Capture keeps running; the queue simply grows until a key comes back.
+  if (argv[1] === "off") {
+    upsertEnvFile({ MEMGW_LLM_API_KEY: "" });
+    console.log(`${c.g("ok")}    LLM key removed from ${ENV_FILE}`);
+    console.log(c.dim("      capture keeps working; events queue up and are distilled when you set a key again"));
+    await restartGateway(cfg);
+    try {
+      const s = await api(cfg, "/stats");
+      console.log(c.dim(`      ${s.counts.events_pending} events queued right now`));
+    } catch {}
+    return;
+  }
   let key = argv[1] && !argv[1].startsWith("--") ? argv[1] : "";
   if (!key) {
     if (!process.stdin.isTTY) {
-      console.error("Usage: memgw key <api-key> [--model gpt-5-mini]");
+      console.error("Usage: memgw key <api-key> [--model gpt-5-mini]   |   memgw key off");
       process.exit(1);
     }
     console.log(c.dim(`The key is written to ${ENV_FILE} on this machine and sent only to the LLM provider you configure. Nothing else ever sees it.`));
@@ -459,30 +500,7 @@ async function cmdKey() {
   const { provider, model } = saveLlmKey(key, opt("model", null), cfg);
   console.log(`${c.g("saved")} ${ENV_FILE} ${c.dim(`(${provider} · model ${model})`)}`);
 
-  // config is read at startup, so a running gateway must be bounced to load it
-  const health = () =>
-    fetch(`http://127.0.0.1:${cfg.port}/health`, { signal: AbortSignal.timeout(2000) })
-      .then((r) => r.json())
-      .catch(() => null);
-  let live = await health();
-  if (live && process.platform === "win32") {
-    return console.log(`${c.y("note")}  restart the gateway to load the key (stop it, then: memgw start)`);
-  }
-  if (live) {
-    const { execFileSync } = await import("node:child_process");
-    try { execFileSync("pkill", ["-f", "memgw.mjs start"], { stdio: "ignore" }); } catch {}
-    try { execFileSync("pkill", ["-f", "node src/server.js"], { stdio: "ignore" }); } catch {}
-    let back = null;
-    for (let i = 0; i < 16 && !back; i++) { await new Promise((r) => setTimeout(r, 500)); back = await health(); }
-    if (!back) {
-      // no supervision picked it up -- start directly, logged like setup does
-      const { openSync } = await import("node:fs");
-      const fd = openSync(join(HOME_DIR, "gateway.log"), "a");
-      spawn(process.execPath, [join(ROOT, "bin", "memgw.mjs"), "start"], { detached: true, stdio: ["ignore", fd, fd] }).unref();
-      for (let i = 0; i < 16 && !back; i++) { await new Promise((r) => setTimeout(r, 500)); back = await health(); }
-    }
-    live = back;
-  }
+  const live = await restartGateway(cfg);
   if (live?.llm?.configured || live?.llm?.mock) {
     console.log(`${c.g("ok")}    gateway restarted and loaded the key`);
     try {

@@ -6,7 +6,7 @@
 //
 // Every run ends in a git commit inside data/, so `git log -p` shows exactly what
 // the model changed and a bad edit can be reverted.
-import { chatWithTools } from "./llm.js";
+import { chatWithTools, llmReady } from "./llm.js";
 import { NOTES_SYSTEM, PROFILE_SYSTEM } from "./prompts.js";
 import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, lstatSync, realpathSync, chmodSync } from "node:fs";
@@ -159,6 +159,7 @@ function gitPush(dataDir) {
 
 
 export async function runNotesUpdate(db, dataDir, { force = false } = {}) {
+  if (!llmReady()) return { facts: 0, writes: 0, skipped: "llm off" }; // extraction off on purpose
   mkdirSync(join(dataDir, "topics"), { recursive: true });
   gitEnsure(dataDir);
 

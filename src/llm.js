@@ -12,6 +12,11 @@ const cfg = () => ({
   mock: process.env.MEMGW_LLM_MOCK === "1",
 });
 
+// No key and not mock = extraction is OFF on purpose. Callers check this
+// instead of firing requests that can only 401: capture keeps working and
+// events queue up until a key arrives.
+export const llmReady = () => Boolean(cfg().apiKey) || cfg().mock;
+
 // OpenAI reasoning models (gpt-5 family, o-series) reject `max_tokens` and any
 // non-default temperature. Older models and other OpenAI-compatible providers
 // still expect `max_tokens`, so the request shape depends on the model name.

@@ -211,7 +211,7 @@ memgw doctor     Diagnose configuration and connectivity
 memgw search     Search facts from the terminal
 memgw save       Save a fact from the terminal
 memgw forget     Retire facts (dry-run by default)
-memgw key        Set the LLM key later (provider auto-detected, gateway restarted)
+memgw key        Set the LLM key later (auto-detects provider); `key off` stops all LLM calls
 memgw embed      Toggle semantic search on or off
 memgw watch      Follow agent transcripts
 memgw hooks      Install Claude Code hooks
