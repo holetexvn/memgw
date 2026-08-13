@@ -4,6 +4,13 @@ All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versioning follows [Semantic Versioning](https://semver.org/).
 
+## [1.1.0](https://github.com/holetexvn/memgw/compare/v1.0.6...v1.1.0) (2026-08-13)
+
+
+### Features
+
+* memgw key off to turn extraction off, and skip worker/notes entirely when no LLM key ([1f273e6](https://github.com/holetexvn/memgw/commit/1f273e68351f716f22d8095f5a653c1b9274d9f3))
+
 ## [1.0.6](https://github.com/holetexvn/memgw/compare/v1.0.5...v1.0.6) (2026-08-11)
 
 
